@@ -16,15 +16,15 @@ button {
 }
 
 button:before {
-    content: "\f2f1";
-    font-family: "Font Awesome 5 Free";
-    font-weight: 900;
-    position: fixed;
-    top: 54%;
-    left: 0.99%;
-    transform: translate(-50%, -50%);
-    font-size: 1.2em;
+    content: "";
+    background-image: url(images/refresh.png);
+    background-size: cover;
+    width: 24px;
+    height: 24px;
+    margin-top: 0px; /* or desired distance */
+    align-self: flex-start;
 }
+
 
 img {
     max-width: 100%;
