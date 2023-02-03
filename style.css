@@ -17,7 +17,7 @@
 }
 
 button {
-    margin-top: 2px;
+    margin-top: 20px;
     padding: 10px 20px;
     background-color: #4CAF50;
     color: #FFFFFF;
@@ -33,10 +33,21 @@ button::before {
     content: "\f01e";
     font-family: "Font Awesome 5 Free";
     font-weight: 900;
-    margin-right: 0px;
+    margin-right: 10px;
 }
 
 img {
     max-width: 100%;
     max-height: 100%;
+}
+
+@media (max-width: 500px) {
+  #random-image {
+    width: 80%;
+  }
+
+  button {
+    padding: 5px 10px;
+    font-size: 0.8em;
+  }
 }
