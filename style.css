@@ -15,12 +15,12 @@
 }
 
 button {
-    margin-top: 20px;
+    margin-top: 15px;
     padding: 10px 20px;
     background-color: #4CAF50;
     color: #FFFFFF;
     border: none;
-    border-radius: 10px;
+    border-radius: 100px;
     box-shadow: 2px 2px 5px #888888;
     cursor: pointer;
     outline: none;
@@ -30,7 +30,7 @@ button::before {
     content: "\f01e";
     font-family: "Font Awesome 5 Free";
     font-weight: 900;
-    margin-right: 10px;
+    margin-right: 0px;
 }
 
 @media (max-width: 500px) {
