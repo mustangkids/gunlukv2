@@ -135,15 +135,15 @@
         </div>
         <div class="field">
           <label>Miktar</label>
-          <input id="fxAmt" type="number" step="0.01" value="500"/>
+          <input id="fxAmt" type="number" step="0.01" value="1000"/>
         </div>
 
         <!-- Marj alanları: varsayılan GİZLİ. ⚙️ ile aç/kapa -->
         <div id="marginBox" class="field hide" style="grid-column:1/-1">
           <label>Marj (%, alış ↓ / satış ↑)</label>
           <div style="display:flex;gap:8px">
-            <input id="mAlis"  type="number" step="0.01" value="0.15" title="Alışta yüzde düşür (ör. 0.15)"/>
-            <input id="mSatis" type="number" step="0.01" value="0.15" title="Satışta yüzde artır (ör. 0.15)"/>
+            <input id="mAlis"  type="number" step="0.01" value="0.247" title="Alışta yüzde düşür (ör. 0.247)"/>
+            <input id="mSatis" type="number" step="0.01" value="0.247" title="Satışta yüzde artır (ör. 0.247)"/>
           </div>
         </div>
 
@@ -343,9 +343,9 @@
     const row  = RAW[code];
     if(!row){ fxOut.textContent='—'; fxNote.textContent='—'; return; }
 
-    // Varsayılan %0.15 / %0.15; UI kapalıysa bu kullanılır
-    const mAlisPct  = marginBox.classList.contains('hide') ? 0.0015 : pct(document.getElementById('mAlis').value);
-    const mSatisPct = marginBox.classList.contains('hide') ? 0.0015 : pct(document.getElementById('mSatis').value);
+    // Varsayılan %0.247 / %0.247; UI kapalıysa bu kullanılır
+    const mAlisPct  = marginBox.classList.contains('hide') ? 0.00247 : pct(document.getElementById('mAlis').value);
+    const mSatisPct = marginBox.classList.contains('hide') ? 0.00247 : pct(document.getElementById('mSatis').value);
     marjState.textContent = `Marj: ${useMargin?'açık':'kapalı'} • ${(mAlisPct*100).toFixed(2)}% / ${(mSatisPct*100).toFixed(2)}%`;
 
     const base = toNum(row[side]);
