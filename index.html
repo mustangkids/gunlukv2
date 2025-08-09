@@ -1,195 +1,149 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Harem Altın Fiyatları — Canlı</title>
-  <meta name="description" content="Harem Altın JSON kaynağından canlı fiyatları gösteren hafif web uygulaması." />
-  <style>
-    :root{ --bg:#0b0c0f; --card:#12141a; --muted:#8b93a7; --fg:#e6e9f2; --brand:#f5bf3e; --border:#1f2430; }
-    *{box-sizing:border-box} html,body{height:100%}
-    body{margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); color:var(--fg);}
-    .container{max-width:1000px; margin:0 auto; padding:24px;}
-    header{display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:16px}
-    .title{display:flex; align-items:center; gap:12px}
-    .logo{width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg, #373b44, #0f0f10); position:relative; box-shadow:0 8px 24px #00000055}
-    .logo::after{content:""; position:absolute; inset:6px; border-radius:8px; background:linear-gradient(135deg, #f7e08f, #caa33a);}
-    h1{font-size:20px; margin:0} .sub{font-size:12px; color:var(--muted)}
-    .controls{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-    button{appearance:none; border:none; background:var(--card); color:var(--fg); padding:10px 12px; border-radius:12px; cursor:pointer; box-shadow:0 0 0 1px var(--border);}
-    .brand{background:linear-gradient(135deg,#f5bf3e,#d09d16); color:#1a1205; font-weight:700;}
-    .search{min-width:220px; background:var(--card); border-radius:12px; padding:10px 12px; outline:none; border:1px solid var(--border); color:var(--fg)}
-    .card{background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:0 20px 40px #00000055; overflow:hidden}
-    .meta{display:flex; gap:12px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border)}
-    .badge{font-size:12px; padding:6px 8px; border-radius:999px; background:#171a22; border:1px solid var(--border); color:var(--muted)}
-    table{width:100%; border-collapse:separate; border-spacing:0}
-    thead th{font-size:12px; color:var(--muted); text-align:left; padding:12px 14px; position:sticky; top:0; background:var(--card); border-bottom:1px solid var(--border);}
-    tbody td{padding:14px; border-bottom:1px solid var(--border);} tbody tr:hover{background:#141821}
-    .name{font-weight:600} .unit{color:var(--muted); font-size:12px} .money{font-variant-numeric: tabular-nums; text-align:right}
-    .footer{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; font-size:12px; color:var(--muted)}
-    .link{color:var(--fg); opacity:.8} .link:hover{opacity:1}
-    @media (max-width: 640px){ .hide-sm{display:none} h1{font-size:18px} .container{padding:16px} }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canlı Piyasalar</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+    }
+    header {
+        background: #222;
+        color: #fff;
+        padding: 10px;
+        text-align: center;
+        font-size: 1.2em;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    .tabs {
+        display: flex;
+        justify-content: center;
+        background: #fff;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        border: none;
+        background: none;
+        font-size: 1em;
+    }
+    .tab.active {
+        border-bottom: 3px solid #ff9800;
+        font-weight: bold;
+    }
+    .container {
+        max-width: 900px;
+        margin: auto;
+        padding: 15px;
+    }
+    .card {
+        background: #fff;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .code {
+        font-weight: bold;
+        font-size: 1.1em;
+    }
+    .prices {
+        text-align: right;
+    }
+    .update-time {
+        font-size: 0.9em;
+        color: #ccc;
+        margin-top: 5px;
+    }
+</style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <div class="title">
-        <div class="logo" aria-hidden="true"></div>
-        <div>
-          <h1>Harem Altın — Canlı Fiyatlar</h1>
-          <div class="sub">Kaynak: workers.dev → canlipiyasalar.haremaltin.com (JSON)</div>
-        </div>
-      </div>
-      <div class="controls">
-        <input id="q" class="search" placeholder="Ara: ALTIN, ONS, USD… (kod)" />
-        <button id="refresh" title="Yenile">Yenile</button>
-        <button id="auto" class="brand" title="Otomatik yenile">Oto: Açık</button>
-      </div>
-    </header>
 
-    <section class="card" aria-live="polite">
-      <div class="meta">
-        <span id="updated" class="badge">Son güncelleme: —</span>
-        <span id="count" class="badge hide-sm">— kayıt</span>
-        <span id="status" class="badge hide-sm">Durum: bağlanıyor…</span>
-      </div>
-      <div style="overflow:auto; max-height:min(70vh, 900px)">
-        <table id="tbl">
-          <thead>
-            <tr>
-              <th data-key="name" class="sort">Kod/Ürün</th>
-              <th class="hide-sm">Birim</th>
-              <th data-key="buy" class="sort" style="text-align:right">Alış</th>
-              <th data-key="sell" class="sort" style="text-align:right">Satış</th>
-              <th class="hide-sm" data-key="type" class="sort">Tür</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
-      <div class="footer">
-        <div>Not: Fiyatlar bilgilendirme amaçlıdır. Resmî fiyatlar için ilgili kurumları kontrol ediniz.</div>
-        <a class="link hide-sm" href="#" id="jsonLink" target="_blank" rel="noopener">JSON kaynağı</a>
-      </div>
-    </section>
-  </div>
+<header>
+    💱 Canlı Piyasalar  
+    <div class="update-time" id="update-time">Son Güncelleme: -</div>
+</header>
 
-  <script>
-    const ENDPOINT = "https://lingering-scene-da42.mehmetklc1907.workers.dev";
-    const TRYF = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 2 });
+<div class="tabs">
+    <button class="tab active" onclick="showTab('doviz')">💱 Döviz</button>
+    <button class="tab" onclick="showTab('altin')">🏅 Altın & Gümüş</button>
+</div>
 
-    let AUTO = true, TIMER = null, DATA = [], SORT = { key: 'sell', dir: 'desc' };
-    document.getElementById('jsonLink').href = ENDPOINT;
+<div class="container" id="data-container"></div>
 
-    function toNum(v){
-  if (v === null || v === undefined) return NaN;
-  if (typeof v === 'number') return v;
+<script>
+const apiURL = "https://lingering-scene-da42.mehmetklc1907.workers.dev/";
 
-  let s = String(v).trim();
+// Kod listeleri
+const dovizList = ["USDTRY","EURTRY","GBPTRY","CHFTRY","AUDTRY","CADTRY","SARTRY","DKKTRY","SEKTRY","NOKTRY","JPYTRY","EURUSD","USDJPY","USDCAD","USDCHF","GBPUSD","AUDUSD"];
+const altinList = ["ALTIN","KULCEALTIN","ONS","AYAR22","AYAR14","CEYREK_YENI","CEYREK_ESKI","YARIM_YENI","YARIM_ESKI","TEK_YENI","TEK_ESKI","ATA_YENI","ATA_ESKI","ATA5_YENI","ATA5_ESKI","GREMESE_YENI","GREMESE_ESKI","GUMUSTRY","GUMUSUSD","XAGUSD","XAUXAG"];
 
-  const lastDot = s.lastIndexOf('.');
-  const lastComma = s.lastIndexOf(',');
+let currentTab = "doviz";
 
-  // Hem . hem , varsa
-  if (lastDot !== -1 && lastComma !== -1) {
-    const dec = Math.max(lastDot, lastComma);
-    s = s.replace(/[.,]/g, '');
-    s = s.slice(0, dec) + '.' + s.slice(dec);
-    return Number.parseFloat(s);
-  }
-
-  // Sadece virgül varsa (TR formatı)
-  if (lastComma !== -1 && lastDot === -1) {
-    s = s.replace(/\./g, '');
-    s = s.replace(',', '.');
-    return Number.parseFloat(s);
-  }
-
-  // Sadece nokta varsa (US formatı)
-  return Number.parseFloat(s.replace(/[^0-9.-]/g, ''));
+function fetchData() {
+    fetch(apiURL)
+    .then(res => res.json())
+    .then(json => {
+        const data = json.data;
+        document.getElementById("update-time").textContent = "Son Güncelleme: " + Object.values(data)[0].tarih;
+        renderData(data);
+    })
+    .catch(err => console.error(err));
 }
 
-    function normalize(list){
-      return list.map(raw => {
-        const name = (raw.code ?? raw.name ?? '').toString();
-        const unit = (raw.birim ?? raw.unit ?? '').toString() || '—';
-        const type = (raw.kategori ?? raw.type ?? '').toString() || '—';
-        const buy  = toNum(raw.alis ?? raw.buy);
-        const sell = toNum(raw.satis ?? raw.sell);
-        return { name, unit, type, buy, sell };
-      }).filter(x => x.name);
-    }
+function renderData(data) {
+    const container = document.getElementById("data-container");
+    container.innerHTML = "";
+    
+    let list = currentTab === "doviz" ? dovizList : altinList;
+    
+    list.forEach(code => {
+        if(data[code]) {
+            let alis = parseFloat(data[code].alis);
+            let satis = parseFloat(data[code].satis);
+            
+            // Döviz 3 hane, Altın 2 hane
+            if(currentTab === "doviz") {
+                alis = alis.toFixed(3);
+                satis = satis.toFixed(3);
+            } else {
+                alis = alis.toFixed(2);
+                satis = satis.toFixed(2);
+            }
+            
+            container.innerHTML += `
+                <div class="card">
+                    <div class="code">${code}</div>
+                    <div class="prices">
+                        <div>Alış: ${alis}</div>
+                        <div>Satış: ${satis}</div>
+                    </div>
+                </div>
+            `;
+        }
+    });
+}
 
-    function render(rows){
-      const tbody = document.getElementById('tbody'); tbody.innerHTML = '';
-      const frag = document.createDocumentFragment();
-      for(const r of rows){
-        const tr = document.createElement('tr');
-        const tdName = document.createElement('td');
-        tdName.innerHTML = `<div class="name">${r.name}</div><div class="unit">${r.unit}</div>`;
-        const tdUnit = document.createElement('td'); tdUnit.className = 'hide-sm'; tdUnit.textContent = r.unit;
-        const tdBuy = document.createElement('td'); tdBuy.className = 'money'; tdBuy.textContent = Number.isFinite(r.buy) ? TRYF.format(r.buy) : '—';
-        const tdSell = document.createElement('td'); tdSell.className = 'money'; tdSell.textContent = Number.isFinite(r.sell) ? TRYF.format(r.sell) : '—';
-        const tdType = document.createElement('td'); tdType.className = 'hide-sm'; tdType.textContent = r.type;
-        tr.append(tdName, tdUnit, tdBuy, tdSell, tdType);
-        frag.appendChild(tr);
-      }
-      tbody.appendChild(frag);
-      document.getElementById('count').textContent = `${rows.length} kayıt`;
-    }
+function showTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll(".tab").forEach(btn => btn.classList.remove("active"));
+    document.querySelector(`.tab:nth-child(${tab === "doviz" ? 1 : 2})`).classList.add("active");
+    fetchData();
+}
 
-    function sortRows(rows){
-      const { key, dir } = SORT; const sign = dir === 'asc' ? 1 : -1;
-      return [...rows].sort((a,b)=>{
-        const va = (typeof a[key] === 'number') ? a[key] : String(a[key]).localeCompare(String(b[key]), 'tr');
-        const vb = (typeof b[key] === 'number') ? b[key] : String(b[key]).localeCompare(String(a[key]), 'tr');
-        if (typeof va === 'number' && typeof vb === 'number') return sign * (va - vb);
-        return sign * String(a[key]).localeCompare(String(b[key]), 'tr');
-      });
-    }
+fetchData();
+setInterval(fetchData, 10000);
+</script>
 
-    function applyFilter(){
-      const q = document.getElementById('q').value.trim().toLowerCase();
-      let rows = DATA;
-      if (q){ rows = rows.filter(r => `${r.name} ${r.unit} ${r.type}`.toLowerCase().includes(q)); }
-      rows = sortRows(rows);
-      render(rows);
-    }
-
-    function setUpdated(ts){
-      const d = ts ? new Date(ts) : new Date();
-      const text = d.toLocaleString('tr-TR', { day: '2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
-      document.getElementById('updated').textContent = `Son güncelleme: ${text}`;
-    }
-
-    async function load(){
-      document.getElementById('status').textContent = 'Durum: bağlanıyor…';
-      try{
-        const res = await fetch(ENDPOINT, { cache: 'no-store' });
-        if(!res.ok) throw new Error(`HTTP ${res.status}`);
-        const root = await res.json(); // { meta, data: { CODE: {...}, ... } } bekliyoruz
-        const list = root && root.data
-          ? Object.values(root.data)
-          : (Array.isArray(root) ? root : (Array.isArray(root.items) ? root.items : []));
-        if (!list.length) throw new Error('Boş veri');
-
-        DATA = normalize(list);
-        setUpdated(root?.meta?.time ? Number(root.meta.time) : undefined);
-        applyFilter();
-        document.getElementById('status').textContent = 'Durum: bağlı';
-      }catch(err){
-        console.error(err);
-        document.getElementById('status').textContent = 'Durum: hata';
-      }
-    }
-
-    function schedule(){ if (TIMER) clearInterval(TIMER); if (AUTO){ TIMER = setInterval(load, 60_000); } }
-    document.getElementById('q').addEventListener('input', applyFilter);
-    document.getElementById('refresh').addEventListener('click', load);
-    document.getElementById('auto').addEventListener('click', ()=>{ AUTO = !AUTO; document.getElementById('auto').textContent = `Oto: ${AUTO? 'Açık':'Kapalı'}`; document.getElementById('auto').classList.toggle('brand', AUTO); schedule(); });
-    document.querySelectorAll('th.sort, th[data-key]').forEach(th=>{ th.style.cursor='pointer'; th.addEventListener('click', ()=>{ const key = th.dataset.key || 'sell'; SORT.dir = (SORT.key === key && SORT.dir === 'desc') ? 'asc' : 'desc'; SORT.key = key; applyFilter(); }); });
-    load(); schedule();
-  </script>
 </body>
 </html>
