@@ -34,9 +34,10 @@
   .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 14px 36px #0007;padding:12px}
   .list{display:grid;grid-template-columns:1fr;gap:10px}
   .row{display:flex;align-items:center;justify-content:space-between;padding:12px;border-radius:14px;background:#0f1218;border:1px solid #141824}
+  .row.compact{padding:10px}
   .left{display:flex;flex-direction:column;gap:4px}
   .code{font-weight:800;font-size:16px}
-  .date{font-size:12px;color:var(--muted)}
+  .date,.mini{font-size:12px;color:var(--muted)}
   .right{text-align:right;display:flex;flex-direction:column;gap:4px;font-variant-numeric:tabular-nums}
   .buy{opacity:.9}
   .sell{opacity:1}
@@ -58,7 +59,7 @@
   .flex{display:flex;gap:10px;flex-wrap:wrap}
   @media (min-width:640px){ .conv{grid-template-columns:repeat(2,1fr)} }
 
-  /* --- Dönüştürücü dropdown genişlik düzeltmesi --- */
+  /* dropdown genişlik fix */
   #viewConv select{
     min-width: 200px;
     text-align: left;
@@ -66,15 +67,8 @@
     box-sizing: border-box;
   }
   @media (max-width: 520px){
-    #viewConv select{
-      min-width: unset;
-      width: 100%;
-    }
+    #viewConv select{ min-width: unset; width: 100%; }
   }
-
-  /* --- Üst mini müşteri liste satırı --- */
-  .row.compact{padding:10px}
-  .row .mini{font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -127,7 +121,7 @@
         <button id="btnToggleMargin" class="tog icon" title="Marj ayarları">⚙️</button>
       </div>
 
-      <!-- ÜST MİNİ MÜŞTERİ LİSTESİ (sadece Dönüştürücü sekmesinde) -->
+      <!-- Üst mini müşteri listesi (marjlı) -->
       <section id="custCard" class="card" style="margin-bottom:10px">
         <div class="meta">
           <span class="badge">Müşteriye söylenecek fiyatlar</span>
@@ -160,7 +154,7 @@
           <input id="fxAmt" type="number" step="0.01" value="500"/>
         </div>
 
-        <!-- Marj alanları: varsayılan GİZLİ. ⚙️ ile aç/kapa -->
+        <!-- Marj alanları: varsayılan gizli -->
         <div id="marginBox" class="field hide" style="grid-column:1/-1">
           <label>Marj (%, alış ↓ / satış ↑)</label>
           <div style="display:flex;gap:8px">
@@ -201,7 +195,6 @@
     return Number.parseFloat(s.replace(/[^0-9.-]/g,''));
   }
 
-  /* Bayrak + sembol */
   function flagFor(code){
     const c = String(code||'').toUpperCase();
     if (c.startsWith('USD')) return '🇺🇸';
@@ -219,7 +212,6 @@
     return '💱';
   }
 
-  /* Görsel adlar */
   const DISPLAY_NAMES = {
     USDTRY: "DOLAR",
     EURTRY: "EURO",
@@ -233,7 +225,7 @@
     NOKTRY: "NORVEÇ KRONU",
     JPYTRY: "JAPON YENİ"
   };
-  const NAME3 = (c)=> DISPLAY_NAMES[c] || c;
+  const NAME = c => DISPLAY_NAMES[c] || c;
 
   /* Bağlantı durumu */
   const connDot = document.getElementById('connDot');
@@ -277,7 +269,7 @@
       setConn(true, tsText);
       renderFx(); renderAu();
       fillConverter();
-      renderCustConv(); // üst mini liste
+      renderCustConv();
       computeConv();
     }catch(err){
       console.error(err);
@@ -286,6 +278,7 @@
   }
   document.getElementById('btnRefresh').onclick = ()=> load();
 
+  /* Listeler */
   const listFx = document.getElementById('listFx');
   const listAu = document.getElementById('listAu');
 
@@ -319,7 +312,7 @@
     });
   }
 
-  /* --- Marj ayarları (varsayılan açık, %0.247) --- */
+  /* --- Marj ayarları (varsayılan %0.247) --- */
   const btnToggleMargin = document.getElementById('btnToggleMargin');
   const marginBox = document.getElementById('marginBox');
   const marjState = document.getElementById('marjState');
@@ -333,12 +326,10 @@
     const wasHidden = marginBox.classList.contains('hide');
     marginBox.classList.toggle('hide', !wasHidden ? true : false);
     btnToggleMargin.title = marginBox.classList.contains('hide') ? 'Marj ayarlarını göster' : 'Marj ayarlarını gizle';
-    // Ayar paneli açılıp kapanınca üst mini listeyi de yenileyelim
-    renderCustConv();
-    computeConv();
+    renderCustConv(); computeConv();
   };
 
-  /* --- ÜST MİNİ LİSTE (Dönüştürücü sekmesi) --- */
+  /* --- Üst mini liste (Dönüştürücü sekmesi) --- */
   const listCust = document.getElementById('listCust');
   const CUST_CODES = ["USDTRY","EURTRY","GBPTRY"];
   function makeCustRow(label, code, a, s, date){
@@ -355,8 +346,7 @@
     return div;
   }
   function currentMarginPercents(){
-    // panel gizliyse otomatik %0.247; açıksa kutulardan al
-    const auto = 0.00247;
+    const auto = 0.00247; // %0.247
     const mAlisPct  = marginBox.classList.contains('hide') ? auto : pct(document.getElementById('mAlis').value);
     const mSatisPct = marginBox.classList.contains('hide') ? auto : pct(document.getElementById('mSatis').value);
     marjState.textContent = `Marj: ${useMargin?'açık':'kapalı'} • ${(mAlisPct*100).toFixed(3)}% / ${(mSatisPct*100).toFixed(3)}%`;
@@ -370,9 +360,9 @@
       const r = RAW[code]; if (!r) return;
       const baseAlis = toNum(r.alis);
       const baseSatis = toNum(r.satis);
-      const a = adjusted('alis', baseAlis, mAlisPct, mSatisPct);   // alış ↓
-      const s = adjusted('satis', baseSatis, mAlisPct, mSatisPct); // satış ↑
-      listCust.appendChild(makeCustRow(NAME3(code), code, a, s, r.tarih));
+      const a = adjusted('alis', baseAlis, mAlisPct, mSatisPct);
+      const s = adjusted('satis', baseSatis, mAlisPct, mSatisPct);
+      listCust.appendChild(makeCustRow(NAME(code), code, a, s, r.tarih));
     });
   }
 
@@ -387,10 +377,10 @@
   function fillConverter(){
     fxCode.innerHTML = '';
     DOVIZ_CODES.filter(c=>RAW[c]).forEach(c=>{
-      const r = RAW[c];
       const opt = document.createElement('option');
       opt.value = c;
-      opt.textContent = `${flagFor(c)} ${NAME3(c)} • Alış ${fmt3.format(toNum(r.alis))} / Satış ${fmt3.format(toNum(r.satis))}`;
+      // >>> sadece BAYRAK + İSİM
+      opt.textContent = `${flagFor(c)} ${NAME(c)}`;
       fxCode.appendChild(opt);
     });
   }
@@ -398,24 +388,23 @@
   function computeConv(){
     const code = fxCode.value;
     const dir  = fxDir.value;
-    const side = fxSide.querySelector('button.active').dataset.side; // 'alis' | 'satis'
+    const side = fxSide.querySelector('button.active').dataset.side;
     const amt  = Number(fxAmt.value) || 0;
     const row  = RAW[code];
     if(!row){ fxOut.textContent='—'; fxNote.textContent='—'; return; }
 
     const { mAlisPct, mSatisPct } = currentMarginPercents();
-
     const base = toNum(row[side]);
     const rate = adjusted(side, base, mAlisPct, mSatisPct);
 
     if (dir==='toTRY'){
       const val = amt * rate;
       fxOut.textContent = fmtTRY.format(val);
-      fxNote.textContent = `${flagFor(code)} ${NAME3(code)} (${code}) ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan (marjlı): ${fmt3.format(rate)} • miktar: ${amt}`;
+      fxNote.textContent = `${flagFor(code)} ${NAME(code)} (${code}) ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan (marjlı): ${fmt3.format(rate)} • miktar: ${amt}`;
     }else{
       const val = amt / rate;
       fxOut.textContent = `${fmt3.format(val)} ${code.replace('TRY','')}`;
-      fxNote.textContent = `${flagFor(code)} ${NAME3(code)} (${code}) ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan (marjlı): ${fmt3.format(rate)} • miktar: ${amt} ₺`;
+      fxNote.textContent = `${flagFor(code)} ${NAME(code)} (${code}) ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan (marjlı): ${fmt3.format(rate)} • miktar: ${amt} ₺`;
     }
   }
 
@@ -436,7 +425,7 @@
     marginBox.classList.add('hide');       // marj UI gizli (marj uygulanır)
     btnToggleMargin.title = 'Marj ayarlarını göster';
     load();
-    setInterval(load, 30000);              // 30 sn
+    setInterval(load, 30000);
   }
   start();
 </script>
