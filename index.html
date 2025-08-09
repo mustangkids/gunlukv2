@@ -14,7 +14,6 @@
   body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:var(--fg)}
   .wrap{max-width:820px;margin:0 auto;padding:16px}
 
-  /* Header */
   header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
   .brand{display:flex;align-items:center;gap:10px}
   .logo{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#373b44,#101214);position:relative;box-shadow:0 10px 26px #0006}
@@ -28,12 +27,10 @@
   .btn{appearance:none;border:none;background:var(--card);color:var(--fg);padding:9px 12px;border-radius:12px;cursor:pointer;box-shadow:0 0 0 1px var(--border);font-weight:600}
   .btn.refresh{background:linear-gradient(135deg,#f5bf3e,#d09d16);color:#1a1205}
 
-  /* Tabs */
   .tabs{display:flex;gap:8px;overflow:auto;padding:2px 0;margin-bottom:10px}
   .tab{border:none;background:#171a22;color:var(--fg);padding:10px 14px;border-radius:12px;cursor:pointer;box-shadow:0 0 0 1px var(--border);font-weight:700;white-space:nowrap}
   .tab.active{background:linear-gradient(135deg,#f5bf3e,#d09d16);color:#1a1205}
 
-  /* Card list (mobile look) */
   .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 14px 36px #0007;padding:12px}
   .list{display:grid;grid-template-columns:1fr;gap:10px}
   .row{display:flex;align-items:center;justify-content:space-between;padding:12px;border-radius:14px;background:#0f1218;border:1px solid #141824}
@@ -46,7 +43,6 @@
   .badge{font-size:12px;padding:6px 8px;border-radius:999px;background:#171a22;border:1px solid var(--border);color:var(--muted)}
   .meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 
-  /* Converter (büyük boy) */
   .conv{display:grid;grid-template-columns:1fr;gap:14px}
   .field{display:flex;flex-direction:column;gap:8px}
   label{font-size:14px;color:var(--muted)}
@@ -108,7 +104,7 @@
       <div class="meta">
         <div class="flex">
           <span class="badge">İki yön: Döviz→TL / TL→Döviz</span>
-          <span id="marjState" class="badge">Marj: açık • %0.15 / %0.15</span>
+          <span id="marjState" class="badge">Marj: açık • %0,247 / %0,247</span>
         </div>
         <!-- Sadece simge -->
         <button id="btnToggleMargin" class="tog icon" title="Marj ayarları">⚙️</button>
@@ -116,7 +112,7 @@
 
       <div class="conv">
         <div class="field">
-          <label>Döviz Çifti</label>
+          <label>Döviz</label>
           <select id="fxCode"></select>
         </div>
         <div class="field">
@@ -135,7 +131,7 @@
         </div>
         <div class="field">
           <label>Miktar</label>
-          <input id="fxAmt" type="number" step="0.01" value="1000"/>
+          <input id="fxAmt" type="number" step="0.01" value="500"/>
         </div>
 
         <!-- Marj alanları: varsayılan GİZLİ. ⚙️ ile aç/kapa -->
@@ -159,12 +155,10 @@
 <script>
   const ENDPOINT = "https://lingering-scene-da42.mehmetklc1907.workers.dev/";
 
-  /* Formatlayıcılar */
   const fmt3 = new Intl.NumberFormat('tr-TR',{minimumFractionDigits:3,maximumFractionDigits:3});
   const fmt2 = new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const fmtTRY = new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY',minimumFractionDigits:2,maximumFractionDigits:2});
 
-  /* Güvenli numara */
   function toNum(v){
     if (v === null || v === undefined) return NaN;
     if (typeof v === 'number') return v;
@@ -181,7 +175,7 @@
     return Number.parseFloat(s.replace(/[^0-9.-]/g,''));
   }
 
-  /* Bayrak/Sembol */
+  /* Bayrak + sembol */
   function flagFor(code){
     const c = String(code||'').toUpperCase();
     if (c.startsWith('USD')) return '🇺🇸 $';
@@ -196,10 +190,24 @@
     if (c.startsWith('SEK')) return '🇸🇪 kr';
     if (c.startsWith('NOK')) return '🇳🇴 kr';
     if (c.startsWith('TRY') || c.endsWith('TRY')) return '🇹🇷 ₺';
-    if (c.startsWith('XAU')||c.includes('ALTIN')||c==='ONS') return '🏅';
-    if (c.startsWith('XAG')||c.includes('GUMUS')) return '🥈';
     return '💱';
   }
+
+  /* Dönüştürücüde okunabilir isimler */
+  const DISPLAY_NAMES = {
+    USDTRY: "DOLAR",
+    EURTRY: "EURO",
+    GBPTRY: "STERLİN",
+    CHFTRY: "İSVİÇRE FRANGI",
+    AUDTRY: "AVUSTRALYA DOLARI",
+    CADTRY: "KANADA DOLARI",
+    SARTRY: "SUUDİ ARABİSTAN RİYALİ",
+    DKKTRY: "DANİMARKA KRONU",
+    SEKTRY: "İSVEÇ KRONU",
+    NOKTRY: "NORVEÇ KRONU",
+    JPYTRY: "JAPON YENİ"
+  };
+  function nameFor(code){ return DISPLAY_NAMES[code] || code; }
 
   /* Durum UI */
   const connDot = document.getElementById('connDot');
@@ -211,7 +219,6 @@
     if (tsText) lastUpdated.textContent = 'Son güncelleme: ' + tsText;
   }
 
-  /* Sekmeler */
   const viewFx = document.getElementById('viewFx');
   const viewAu = document.getElementById('viewAu');
   const viewConv = document.getElementById('viewConv');
@@ -227,7 +234,6 @@
     viewConv.classList.toggle('hide', which!=='conv');
   }
 
-  /* Veri kümeleri */
   const DOVIZ_CODES = ["USDTRY","EURTRY","GBPTRY","CHFTRY","AUDTRY","CADTRY","SARTRY","DKKTRY","SEKTRY","NOKTRY","JPYTRY","EURUSD","USDJPY","USDCAD","USDCHF","GBPUSD","AUDUSD"];
   const ALTIN_CODES = ["ALTIN","KULCEALTIN","ONS","AYAR22","AYAR14","CEYREK_YENI","CEYREK_ESKI","YARIM_YENI","YARIM_ESKI","TEK_YENI","TEK_ESKI","ATA_YENI","ATA_ESKI","ATA5_YENI","ATA5_ESKI","GREMESE_YENI","GREMESE_ESKI","GUMUSTRY","GUMUSUSD","XAGUSD","XAUXAG","XPTUSD","XPDUSD","PLATIN","PALADYUM"];
 
@@ -237,7 +243,7 @@
     try{
       const res = await fetch(ENDPOINT, {cache:'no-store'});
       if(!res.ok) throw new Error('HTTP '+res.status);
-      const root = await res.json(); // { meta, data:{...} }
+      const root = await res.json();
       RAW = root?.data || {};
       const any = Object.values(RAW)[0];
       const tsText = any?.tarih || '—';
@@ -251,7 +257,6 @@
   }
   document.getElementById('btnRefresh').onclick = ()=> load();
 
-  /* Listeler (kart görünüm) */
   const listFx = document.getElementById('listFx');
   const listAu = document.getElementById('listAu');
 
@@ -270,7 +275,6 @@
       </div>`;
     return div;
   }
-
   function renderFx(){
     listFx.innerHTML = '';
     DOVIZ_CODES.forEach(code=>{
@@ -286,7 +290,7 @@
     });
   }
 
-  /* Dönüştürücü (yalnız döviz) */
+  /* Dönüştürücü */
   const fxCode = document.getElementById('fxCode');
   const fxDir  = document.getElementById('fxDir');
   const fxSide = document.getElementById('fxSide');
@@ -303,23 +307,23 @@
       const r = RAW[c];
       const opt = document.createElement('option');
       opt.value = c;
-      opt.textContent = `${flagFor(c)} ${c} • Alış ${fmt3.format(toNum(r.alis))} / Satış ${fmt3.format(toNum(r.satis))}`;
+      opt.textContent = `${flagFor(c)} ${nameFor(c)} • Alış ${fmt3.format(toNum(r.alis))} / Satış ${fmt3.format(toNum(r.satis))}`;
       fxCode.appendChild(opt);
     });
   }
 
-  // Marj: Varsayılan AÇIK. UI gizli; ⚙️ ile açıp yüzde değiştirebilirsin.
+  // Marj: Varsayılan AÇIK (UI gizli). Otomatik değer %0,247.
   let useMargin = true;
   function pct(v){ return Math.max(0, Number(v)||0)/100; }
   function adjusted(side, base, mAlisPct, mSatisPct){
     if(!useMargin) return base;
     return side==='alis' ? base*(1 - mAlisPct) : base*(1 + mSatisPct);
+    // alışta düşür, satışta artır
   }
 
   btnToggleMargin.onclick = ()=>{
-    const isHidden = marginBox.classList.contains('hide');
-    marginBox.classList.toggle('hide', !isHidden ? true : false);
-    // buton metni hep simge; tooltip değişsin
+    const wasHidden = marginBox.classList.contains('hide');
+    marginBox.classList.toggle('hide', !wasHidden ? true : false);
     btnToggleMargin.title = marginBox.classList.contains('hide') ? 'Marj ayarlarını göster' : 'Marj ayarlarını gizle';
   };
 
@@ -343,10 +347,11 @@
     const row  = RAW[code];
     if(!row){ fxOut.textContent='—'; fxNote.textContent='—'; return; }
 
-    // Varsayılan %0.247 / %0.247; UI kapalıysa bu kullanılır
-    const mAlisPct  = marginBox.classList.contains('hide') ? 0.00247 : pct(document.getElementById('mAlis').value);
-    const mSatisPct = marginBox.classList.contains('hide') ? 0.00247 : pct(document.getElementById('mSatis').value);
-    marjState.textContent = `Marj: ${useMargin?'açık':'kapalı'} • ${(mAlisPct*100).toFixed(2)}% / ${(mSatisPct*100).toFixed(2)}%`;
+    // Otomatik (gizliyse) %0,247; UI açıksa oradan al
+    const auto = 0.00247;
+    const mAlisPct  = marginBox.classList.contains('hide') ? auto : pct(document.getElementById('mAlis').value);
+    const mSatisPct = marginBox.classList.contains('hide') ? auto : pct(document.getElementById('mSatis').value);
+    marjState.textContent = `Marj: ${useMargin?'açık':'kapalı'} • ${(mAlisPct*100).toFixed(3)}% / ${(mSatisPct*100).toFixed(3)}%`;
 
     const base = toNum(row[side]);
     const rate = adjusted(side, base, mAlisPct, mSatisPct);
@@ -354,21 +359,20 @@
     if (dir==='toTRY'){
       const val = amt * rate;
       fxOut.textContent = fmtTRY.format(val);
-      fxNote.textContent = `${flagFor(code)} ${code} ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan: ${fmt3.format(rate)} • miktar: ${amt}`;
+      fxNote.textContent = `${flagFor(code)} ${nameFor(code)} (${code}) ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan: ${fmt3.format(rate)} • miktar: ${amt}`;
     }else{
       const val = amt / rate;
       fxOut.textContent = `${fmt3.format(val)} ${code.replace('TRY','')}`;
-      fxNote.textContent = `${flagFor(code)} ${code} ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan: ${fmt3.format(rate)} • miktar: ${amt} ₺`;
+      fxNote.textContent = `${flagFor(code)} ${nameFor(code)} (${code}) ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan: ${fmt3.format(rate)} • miktar: ${amt} ₺`;
     }
   }
 
-  // Başlat
   function start(){
-    show('fx');                    // ilk sekme: Döviz
-    marginBox.classList.add('hide'); // marj alanı gizli (marj uygulanır)
+    show('fx');
+    marginBox.classList.add('hide');           // marj UI gizli
     btnToggleMargin.title = 'Marj ayarlarını göster';
     load();
-    setInterval(load, 30000); // 30 sn
+    setInterval(load, 30000);
   }
   start();
 </script>
