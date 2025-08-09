@@ -36,31 +36,33 @@
   /* Card list (mobile look) */
   .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 14px 36px #0007;padding:12px}
   .list{display:grid;grid-template-columns:1fr;gap:10px}
-  .row{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:14px;background:#0f1218;border:1px solid #141824}
+  .row{display:flex;align-items:center;justify-content:space-between;padding:12px;border-radius:14px;background:#0f1218;border:1px solid #141824}
   .left{display:flex;flex-direction:column;gap:4px}
-  .code{font-weight:800;font-size:15px}
+  .code{font-weight:800;font-size:16px}
   .date{font-size:12px;color:var(--muted)}
-  .right{text-align:right;display:flex;flex-direction:column;gap:2px;font-variant-numeric:tabular-nums}
+  .right{text-align:right;display:flex;flex-direction:column;gap:4px;font-variant-numeric:tabular-nums}
   .buy{opacity:.9}
   .sell{opacity:1}
   .badge{font-size:12px;padding:6px 8px;border-radius:999px;background:#171a22;border:1px solid var(--border);color:var(--muted)}
   .meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 
-  /* Converter */
-  .conv{display:grid;grid-template-columns:1fr;gap:10px}
-  .field{display:flex;flex-direction:column;gap:6px}
-  label{font-size:12px;color:var(--muted)}
-  input,select{background:#0f1218;color:var(--fg);border:1px solid var(--border);border-radius:12px;padding:10px 12px;outline:none}
-  .seg{display:flex;background:#0f1218;border:1px solid var(--border);border-radius:12px;overflow:hidden}
-  .seg button{flex:1;border:none;background:transparent;color:var(--fg);padding:10px 12px;cursor:pointer;font-weight:700}
+  /* Converter (büyük boy) */
+  .conv{display:grid;grid-template-columns:1fr;gap:14px}
+  .field{display:flex;flex-direction:column;gap:8px}
+  label{font-size:14px;color:var(--muted)}
+  input,select{background:#0f1218;color:var(--fg);border:1px solid var(--border);border-radius:14px;padding:14px 16px;outline:none;font-size:18px}
+  .seg{display:flex;background:#0f1218;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  .seg button{flex:1;border:none;background:transparent;color:var(--fg);padding:14px 16px;cursor:pointer;font-weight:800;font-size:16px}
   .seg button.active{background:#20283a}
-  .result{font-size:20px;font-weight:900}
-  .hint{color:var(--muted);font-size:12px}
+  .result{font-size:26px;font-weight:900}
+  .hint{color:var(--muted);font-size:13px}
   .hide{display:none !important}
-
-  @media (min-width:640px){
-    .conv{grid-template-columns:repeat(2,1fr)}
-  }
+  .conv-top{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px}
+  .mini{font-size:12px;color:var(--muted)}
+  .tog{border:none;background:#171a22;color:var(--fg);padding:8px 12px;border-radius:999px;cursor:pointer;box-shadow:0 0 0 1px var(--border);font-weight:700}
+  .on{background:#1f2a44}
+  .flex{display:flex;gap:10px;flex-wrap:wrap}
+  @media (min-width:640px){ .conv{grid-template-columns:repeat(2,1fr)} }
 </style>
 </head>
 <body>
@@ -89,7 +91,7 @@
     <section id="viewFx" class="card">
       <div class="meta">
         <span class="badge">Gösterim: 3 hane</span>
-        <a class="badge" href="https://lingering-scene-da42.mehmetklc1907.workers.dev/" target="_blank" rel="noopener">JSON</a>
+        <span class="badge">Bilgilendirme amaçlı</span>
       </div>
       <div id="listFx" class="list"></div>
     </section>
@@ -106,9 +108,17 @@
     <!-- Dönüştürücü -->
     <section id="viewConv" class="card hide">
       <div class="meta">
-        <span class="badge">İki yön: Döviz→TL / TL→Döviz</span>
-        <span class="badge">Marj varsayılan: kapalı</span>
+        <div class="flex">
+          <span class="badge">İki yön: Döviz→TL / TL→Döviz</span>
+          <span id="marjState" class="badge">Marj: açık • %0.15 / %0.15</span>
+        </div>
+        <button id="btnToggleMargin" class="tog">⚙️ Marjı Göster</button>
       </div>
+
+      <div class="conv-top mini">
+        <div>Not: Marj **varsayılan açık**. Alanı gizli; istersem ayarlarını açıp değiştirebilirim.</div>
+      </div>
+
       <div class="conv">
         <div class="field">
           <label>Döviz Çifti</label>
@@ -133,11 +143,11 @@
           <input id="fxAmt" type="number" step="0.01" value="500"/>
         </div>
 
-        <!-- Marj alanları: GİZLİ. Açmak için 'hide' sınıfını kaldır. -->
-        <div id="marginBox" class="field hide">
+        <!-- Marj alanları: VARSAYILAN GİZLİ. "⚙️ Marjı Göster" ile açılır. -->
+        <div id="marginBox" class="field hide" style="grid-column:1/-1">
           <label>Marj (%, alış ↓ / satış ↑)</label>
           <div style="display:flex;gap:8px">
-            <input id="mAlis" type="number" step="0.01" value="0.15" title="Alışta yüzde düşür (ör. 0.15)"/>
+            <input id="mAlis"  type="number" step="0.01" value="0.15" title="Alışta yüzde düşür (ör. 0.15)"/>
             <input id="mSatis" type="number" step="0.01" value="0.15" title="Satışta yüzde artır (ör. 0.15)"/>
           </div>
         </div>
@@ -154,11 +164,12 @@
 <script>
   const ENDPOINT = "https://lingering-scene-da42.mehmetklc1907.workers.dev/";
 
-  /* === Yardımcılar === */
+  /* Formatlayıcılar */
   const fmt3 = new Intl.NumberFormat('tr-TR',{minimumFractionDigits:3,maximumFractionDigits:3});
   const fmt2 = new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const fmtTRY = new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY',minimumFractionDigits:2,maximumFractionDigits:2});
 
+  /* Güvenli numara */
   function toNum(v){
     if (v === null || v === undefined) return NaN;
     if (typeof v === 'number') return v;
@@ -175,7 +186,27 @@
     return Number.parseFloat(s.replace(/[^0-9.-]/g,''));
   }
 
-  /* === Durum UI === */
+  /* Bayrak/Sembol */
+  function flagFor(code){
+    const c = String(code||'').toUpperCase();
+    if (c.startsWith('USD')) return '🇺🇸 $';
+    if (c.startsWith('EUR')) return '🇪🇺 €';
+    if (c.startsWith('GBP')) return '🇬🇧 £';
+    if (c.startsWith('JPY')) return '🇯🇵 ¥';
+    if (c.startsWith('CHF')) return '🇨🇭 ₣';
+    if (c.startsWith('AUD')) return '🇦🇺 $';
+    if (c.startsWith('CAD')) return '🇨🇦 $';
+    if (c.startsWith('SAR')) return '🇸🇦 ر.س';
+    if (c.startsWith('DKK')) return '🇩🇰 kr';
+    if (c.startsWith('SEK')) return '🇸🇪 kr';
+    if (c.startsWith('NOK')) return '🇳🇴 kr';
+    if (c.startsWith('TRY') || c.endsWith('TRY')) return '🇹🇷 ₺';
+    if (c.startsWith('XAU')||c.includes('ALTIN')||c==='ONS') return '🏅';
+    if (c.startsWith('XAG')||c.includes('GUMUS')) return '🥈';
+    return '💱';
+  }
+
+  /* Durum UI */
   const connDot = document.getElementById('connDot');
   const connText = document.getElementById('connText');
   const lastUpdated = document.getElementById('lastUpdated');
@@ -185,7 +216,7 @@
     if (tsText) lastUpdated.textContent = 'Son güncelleme: ' + tsText;
   }
 
-  /* === Sekmeler === */
+  /* Sekmeler */
   const viewFx = document.getElementById('viewFx');
   const viewAu = document.getElementById('viewAu');
   const viewConv = document.getElementById('viewConv');
@@ -201,7 +232,7 @@
     viewConv.classList.toggle('hide', which!=='conv');
   }
 
-  /* === Veri === */
+  /* Veri kümeleri */
   const DOVIZ_CODES = ["USDTRY","EURTRY","GBPTRY","CHFTRY","AUDTRY","CADTRY","SARTRY","DKKTRY","SEKTRY","NOKTRY","JPYTRY","EURUSD","USDJPY","USDCAD","USDCHF","GBPUSD","AUDUSD"];
   const ALTIN_CODES = ["ALTIN","KULCEALTIN","ONS","AYAR22","AYAR14","CEYREK_YENI","CEYREK_ESKI","YARIM_YENI","YARIM_ESKI","TEK_YENI","TEK_ESKI","ATA_YENI","ATA_ESKI","ATA5_YENI","ATA5_ESKI","GREMESE_YENI","GREMESE_ESKI","GUMUSTRY","GUMUSUSD","XAGUSD","XAUXAG","XPTUSD","XPDUSD","PLATIN","PALADYUM"];
 
@@ -216,31 +247,26 @@
       const any = Object.values(RAW)[0];
       const tsText = any?.tarih || '—';
       setConn(true, tsText);
-      renderFx();
-      renderAu();
-      fillConverter();
-      computeConv();
+      renderFx(); renderAu();
+      fillConverter(); computeConv();
     }catch(err){
       console.error(err);
       setConn(false);
     }
   }
-
-  /* === Yenile === */
   document.getElementById('btnRefresh').onclick = ()=> load();
 
-  /* === Listeler (kart görünüm) === */
+  /* Listeler (kart görünüm) */
   const listFx = document.getElementById('listFx');
   const listAu = document.getElementById('listAu');
 
   function makeRow(code, a, s, date, decimals){
     const aT = (decimals===3?fmt3:fmt2).format(a);
     const sT = (decimals===3?fmt3:fmt2).format(s);
-    const div = document.createElement('div');
-    div.className = 'row';
+    const div = document.createElement('div'); div.className = 'row';
     div.innerHTML = `
       <div class="left">
-        <div class="code">${code}</div>
+        <div class="code">${flagFor(code)} ${code}</div>
         <div class="date">${date||''}</div>
       </div>
       <div class="right">
@@ -265,13 +291,16 @@
     });
   }
 
-  /* === Dönüştürücü (yalnız döviz) === */
+  /* Dönüştürücü (yalnız döviz) */
   const fxCode = document.getElementById('fxCode');
   const fxDir  = document.getElementById('fxDir');
   const fxSide = document.getElementById('fxSide');
   const fxAmt  = document.getElementById('fxAmt');
   const fxOut  = document.getElementById('fxOut');
   const fxNote = document.getElementById('fxNote');
+  const btnToggleMargin = document.getElementById('btnToggleMargin');
+  const marginBox = document.getElementById('marginBox');
+  const marjState = document.getElementById('marjState');
 
   function fillConverter(){
     fxCode.innerHTML = '';
@@ -279,45 +308,23 @@
       const r = RAW[c];
       const opt = document.createElement('option');
       opt.value = c;
-      opt.textContent = `${c} • Alış ${fmt3.format(toNum(r.alis))} / Satış ${fmt3.format(toNum(r.satis))}`;
+      opt.textContent = `${flagFor(c)} ${c} • Alış ${fmt3.format(toNum(r.alis))} / Satış ${fmt3.format(toNum(r.satis))}`;
       fxCode.appendChild(opt);
     });
   }
 
-  // Marjı açmak için: aşağıdaki USE_MARGIN=false'u true yap;
-  // ve "getMarginAdjusted()" fonksiyonundaki yüzdeleri (varsayılan 0.15%) değiştir.
-  const USE_MARGIN = false;
-
-  function getMarginAdjusted(side, base){
-    // Varsayılan yüzdeler:
-    const pctAlis = 0.15;  // %0.15 (alışta düşür)
-    const pctSatis = 0.15; // %0.15 (satışta artır)
-    if(!USE_MARGIN) return base;
-    if(side==='alis') return base * (1 - pctAlis/100);
-    return base * (1 + pctSatis/100);
+  // Marj: Varsayılan AÇIK. UI gizli; butonla aç/kapa.
+  let useMargin = true;
+  function pct(v){ return Math.max(0, Number(v)||0)/100; }
+  function adjusted(side, base, mAlisPct, mSatisPct){
+    if(!useMargin) return base;
+    return side==='alis' ? base*(1 - mAlisPct) : base*(1 + mSatisPct);
   }
 
-  function computeConv(){
-    const code = fxCode.value;
-    const dir  = fxDir.value; // toTRY / fromTRY
-    const side = fxSide.querySelector('button.active').dataset.side; // 'alis' | 'satis'
-    const amt  = Number(fxAmt.value) || 0;
-    const row  = RAW[code];
-    if(!row){ fxOut.textContent='—'; fxNote.textContent='—'; return; }
-
-    const base = toNum(row[side]);
-    const used = getMarginAdjusted(side, base);
-
-    if (dir==='toTRY'){
-      const val = amt * used;
-      fxOut.textContent = fmtTRY.format(val);
-      fxNote.textContent = `${code} ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan: ${fmt3.format(used)} • miktar: ${amt}`;
-    }else{
-      const val = amt / used;
-      fxOut.textContent = `${fmt3.format(val)} ${code.replace('TRY','')}`;
-      fxNote.textContent = `${code} ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan: ${fmt3.format(used)} • miktar: ${amt} ₺`;
-    }
-  }
+  btnToggleMargin.onclick = ()=>{
+    const show = marginBox.classList.toggle('hide') === false; // false dönerse yeni durum görünür
+    btnToggleMargin.textContent = show ? '⚙️ Marjı Gizle' : '⚙️ Marjı Göster';
+  };
 
   fxCode.onchange = computeConv;
   fxDir.onchange  = computeConv;
@@ -328,11 +335,45 @@
       e.target.classList.add('active'); computeConv();
     }
   });
+  document.getElementById('mAlis')?.addEventListener('input', computeConv);
+  document.getElementById('mSatis')?.addEventListener('input', computeConv);
 
-  // İlk yükleme & otomatik yenileme
-  show('fx');
-  load();
-  setInterval(load, 30000); // 30 sn'de bir
+  function computeConv(){
+    const code = fxCode.value;
+    const dir  = fxDir.value;
+    const side = fxSide.querySelector('button.active').dataset.side; // 'alis' | 'satis'
+    const amt  = Number(fxAmt.value) || 0;
+    const row  = RAW[code];
+    if(!row){ fxOut.textContent='—'; fxNote.textContent='—'; return; }
+
+    // Varsayılan %0.15 / %0.15; UI açıksa oradan al
+    const mAlisPct  = marginBox.classList.contains('hide') ? 0.0015 : pct(document.getElementById('mAlis').value);
+    const mSatisPct = marginBox.classList.contains('hide') ? 0.0015 : pct(document.getElementById('mSatis').value);
+    marjState.textContent = `Marj: ${useMargin?'açık':'kapalı'} • ${(mAlisPct*100).toFixed(2)}% / ${(mSatisPct*100).toFixed(2)}%`;
+
+    const base = toNum(row[side]);
+    const rate = adjusted(side, base, mAlisPct, mSatisPct);
+
+    if (dir==='toTRY'){
+      const val = amt * rate;
+      fxOut.textContent = fmtTRY.format(val);
+      fxNote.textContent = `${flagFor(code)} ${code} ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan: ${fmt3.format(rate)} • miktar: ${amt}`;
+    }else{
+      const val = amt / rate;
+      fxOut.textContent = `${fmt3.format(val)} ${code.replace('TRY','')}`;
+      fxNote.textContent = `${flagFor(code)} ${code} ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan: ${fmt3.format(rate)} • miktar: ${amt} ₺`;
+    }
+  }
+
+  // Başlat
+  function start(){
+    show('fx');              // ilk sekme: Döviz
+    marginBox.classList.add('hide'); // marj alanı gizli (marj uygulanıyor)
+    btnToggleMargin.textContent = '⚙️ Marjı Göster';
+    load();
+    setInterval(load, 30000); // 30 sn
+  }
+  start();
 </script>
 </body>
 </html>
