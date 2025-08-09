@@ -1,149 +1,333 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Canlı Piyasalar</title>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f4f4;
-        margin: 0;
-        padding: 0;
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Canlı Piyasalar — Döviz • Altın • Dönüştürücü</title>
+  <style>
+    :root{
+      --bg: #0b0c0f; --card: #12141a; --muted: #8b93a7; --fg: #e6e9f2; --brand: #f5bf3e; --border: #1f2430;
+      --ok:#22c55e; --accent:#f59e0b;
     }
-    header {
-        background: #222;
-        color: #fff;
-        padding: 10px;
-        text-align: center;
-        font-size: 1.2em;
-        position: sticky;
-        top: 0;
-        z-index: 100;
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); color:var(--fg);}
+    .container{max-width:1000px; margin:0 auto; padding:16px;}
+    header{display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:12px}
+    .title{display:flex; align-items:center; gap:12px}
+    .logo{width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg, #373b44, #0f0f10); position:relative; box-shadow:0 8px 24px #00000055}
+    .logo::after{content:""; position:absolute; inset:6px; border-radius:8px; background:linear-gradient(135deg, #f7e08f, #caa33a);}
+    h1{font-size:20px; margin:0}
+    .sub{font-size:12px; color:var(--muted)}
+    .tabs{display:flex; gap:8px; flex-wrap:wrap}
+    .tab{appearance:none; border:none; padding:10px 14px; border-radius:12px; cursor:pointer; background:#171a22; color:var(--fg); box-shadow:0 0 0 1px var(--border); font-weight:700}
+    .tab.active{background:linear-gradient(135deg,#f5bf3e,#d09d16); color:#1a1205}
+    .badge{font-size:12px; padding:6px 8px; border-radius:999px; background:#171a22; border:1px solid var(--border); color:var(--muted)}
+    .card{background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:0 20px 40px #00000055; overflow:hidden; margin-top:10px}
+    .meta{display:flex; gap:12px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border)}
+    table{width:100%; border-collapse:separate; border-spacing:0}
+    thead th{font-size:12px; color:var(--muted); text-align:left; padding:12px 14px; position:sticky; top:0; background:var(--card); border-bottom:1px solid var(--border);}
+    tbody td{padding:14px; border-bottom:1px solid var(--border);}
+    tbody tr:hover{background:#141821}
+    .name{font-weight:600}
+    .unit{color:var(--muted); font-size:12px}
+    .money{font-variant-numeric: tabular-nums; text-align:right}
+    .footer{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; font-size:12px; color:var(--muted)}
+    .hide{display:none !important}
+    .controls{display:flex; gap:12px; flex-wrap:wrap; align-items:end; padding:12px 16px}
+    .field{display:flex; flex-direction:column; gap:6px}
+    .field label{font-size:12px; color:var(--muted)}
+    input, select{background:#0f1218; color:var(--fg); border:1px solid var(--border); border-radius:12px; padding:10px 12px; outline:none; min-width:140px}
+    .seg{display:flex; background:#0f1218; border:1px solid var(--border); border-radius:12px; overflow:hidden}
+    .seg button{flex:1; border:none; background:transparent; color:var(--fg); padding:10px 12px; cursor:pointer; font-weight:700}
+    .seg button.active{background:#222938}
+    .result{font-size:20px; font-weight:800; color:#e6e9f2}
+    .muted{color:var(--muted)}
+    .pill{display:inline-block; padding:3px 8px; border-radius:999px; background:#171a22; border:1px solid var(--border); font-size:12px}
+    a.link{color:var(--fg); opacity:.8; text-decoration:none}
+    a.link:hover{opacity:1}
+    @media (max-width: 640px){
+      .container{padding:12px}
+      h1{font-size:18px}
+      .hide-sm{display:none}
     }
-    .tabs {
-        display: flex;
-        justify-content: center;
-        background: #fff;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .tab {
-        padding: 10px 20px;
-        cursor: pointer;
-        border: none;
-        background: none;
-        font-size: 1em;
-    }
-    .tab.active {
-        border-bottom: 3px solid #ff9800;
-        font-weight: bold;
-    }
-    .container {
-        max-width: 900px;
-        margin: auto;
-        padding: 15px;
-    }
-    .card {
-        background: #fff;
-        padding: 15px;
-        margin-bottom: 10px;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .code {
-        font-weight: bold;
-        font-size: 1.1em;
-    }
-    .prices {
-        text-align: right;
-    }
-    .update-time {
-        font-size: 0.9em;
-        color: #ccc;
-        margin-top: 5px;
-    }
-</style>
+  </style>
 </head>
 <body>
+  <div class="container">
+    <header>
+      <div class="title">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Canlı Piyasalar — Döviz • Altın • Dönüştürücü</h1>
+          <div class="sub">Kaynak: Cloudflare Worker → Harem JSON</div>
+        </div>
+      </div>
+      <div class="tabs">
+        <button id="tab-doviz" class="tab active">💱 Döviz</button>
+        <button id="tab-altin" class="tab">🏅 Altın & Gümüş</button>
+        <button id="tab-donus" class="tab">🔁 Dönüştürücü</button>
+      </div>
+    </header>
 
-<header>
-    💱 Canlı Piyasalar  
-    <div class="update-time" id="update-time">Son Güncelleme: -</div>
-</header>
+    <!-- Döviz Tab -->
+    <section id="view-doviz" class="card">
+      <div class="meta">
+        <span id="upd-doviz" class="badge">Son güncelleme: —</span>
+        <span class="badge hide-sm">Gösterim: Döviz 3 hane</span>
+      </div>
+      <div style="overflow:auto; max-height:min(70vh, 900px)">
+        <table>
+          <thead>
+            <tr>
+              <th>Kod</th>
+              <th class="hide-sm">Tarih</th>
+              <th style="text-align:right">Alış</th>
+              <th style="text-align:right">Satış</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-doviz"></tbody>
+        </table>
+      </div>
+      <div class="footer">
+        <div>Not: Fiyatlar bilgilendirme amaçlıdır.</div>
+        <a class="link hide-sm" href="https://lingering-scene-da42.mehmetklc1907.workers.dev/" target="_blank" rel="noopener">JSON</a>
+      </div>
+    </section>
 
-<div class="tabs">
-    <button class="tab active" onclick="showTab('doviz')">💱 Döviz</button>
-    <button class="tab" onclick="showTab('altin')">🏅 Altın & Gümüş</button>
-</div>
+    <!-- Altın Tab -->
+    <section id="view-altin" class="card hide">
+      <div class="meta">
+        <span id="upd-altin" class="badge">Son güncelleme: —</span>
+        <span class="badge hide-sm">Gösterim: Altın & Gümüş 2 hane</span>
+      </div>
+      <div style="overflow:auto; max-height:min(70vh, 900px)">
+        <table>
+          <thead>
+            <tr>
+              <th>Kod</th>
+              <th class="hide-sm">Tarih</th>
+              <th style="text-align:right">Alış</th>
+              <th style="text-align:right">Satış</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-altin"></tbody>
+        </table>
+      </div>
+      <div class="footer">
+        <div>Not: Fiyatlar bilgilendirme amaçlıdır.</div>
+        <a class="link hide-sm" href="https://lingering-scene-da42.mehmetklc1907.workers.dev/" target="_blank" rel="noopener">JSON</a>
+      </div>
+    </section>
 
-<div class="container" id="data-container"></div>
+    <!-- Dönüştürücü Tab -->
+    <section id="view-donus" class="card hide">
+      <div class="meta">
+        <span id="upd-donus" class="badge">Son güncelleme: —</span>
+        <span class="badge">Marj: Alış ↓, Satış ↑</span>
+      </div>
+      <div class="controls">
+        <div class="field">
+          <label>Çift (Döviz)</label>
+          <select id="fx-code"></select>
+        </div>
+        <div class="field">
+          <label>Yön</label>
+          <select id="fx-dir">
+            <option value="toTRY">Döviz → TL</option>
+            <option value="fromTRY">TL → Döviz</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tür</label>
+          <div id="fx-side" class="seg">
+            <button type="button" data-side="alis" class="active">Alış</button>
+            <button type="button" data-side="satis">Satış</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Miktar</label>
+          <input id="fx-amount" type="number" step="0.01" value="500" />
+        </div>
+        <div class="field">
+          <label>Marj (%, alış / satış)</label>
+          <div style="display:flex; gap:8px">
+            <input id="fx-m-alis" type="number" step="0.01" value="0.15" title="Alışta yüzde düşür (örn 0.15)" />
+            <input id="fx-m-satis" type="number" step="0.01" value="0.15" title="Satışta yüzde artır (örn 0.15)" />
+          </div>
+        </div>
+        <div class="field" style="min-width:260px">
+          <label>Sonuç</label>
+          <div id="fx-result" class="result">—</div>
+          <div id="fx-note" class="muted">—</div>
+        </div>
+      </div>
+    </section>
+  </div>
 
-<script>
-const apiURL = "https://lingering-scene-da42.mehmetklc1907.workers.dev/";
+  <script>
+    const ENDPOINT = "https://lingering-scene-da42.mehmetklc1907.workers.dev/";
+    // Kümeler (öncekinden)
+    const DOVIZ_CODES = ["USDTRY","EURTRY","GBPTRY","CHFTRY","AUDTRY","CADTRY","SARTRY","DKKTRY","SEKTRY","NOKTRY","JPYTRY","EURUSD","USDJPY","USDCAD","USDCHF","GBPUSD","AUDUSD"];
+    const ALTIN_CODES = ["ALTIN","KULCEALTIN","ONS","AYAR22","AYAR14","CEYREK_YENI","CEYREK_ESKI","YARIM_YENI","YARIM_ESKI","TEK_YENI","TEK_ESKI","ATA_YENI","ATA_ESKI","ATA5_YENI","ATA5_ESKI","GREMESE_YENI","GREMESE_ESKI","GUMUSTRY","GUMUSUSD","XAGUSD","XAUXAG","XPTUSD","XPDUSD","PLATIN","PALADYUM"];
 
-// Kod listeleri
-const dovizList = ["USDTRY","EURTRY","GBPTRY","CHFTRY","AUDTRY","CADTRY","SARTRY","DKKTRY","SEKTRY","NOKTRY","JPYTRY","EURUSD","USDJPY","USDCAD","USDCHF","GBPUSD","AUDUSD"];
-const altinList = ["ALTIN","KULCEALTIN","ONS","AYAR22","AYAR14","CEYREK_YENI","CEYREK_ESKI","YARIM_YENI","YARIM_ESKI","TEK_YENI","TEK_ESKI","ATA_YENI","ATA_ESKI","ATA5_YENI","ATA5_ESKI","GREMESE_YENI","GREMESE_ESKI","GUMUSTRY","GUMUSUSD","XAGUSD","XAUXAG"];
+    const fmt3 = new Intl.NumberFormat('tr-TR',{minimumFractionDigits:3, maximumFractionDigits:3});
+    const fmt2 = new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2, maximumFractionDigits:2});
+    const fmtTRY = new Intl.NumberFormat('tr-TR',{style:'currency', currency:'TRY', minimumFractionDigits:2, maximumFractionDigits:2});
 
-let currentTab = "doviz";
+    function toNum(v){
+      if (v === null || v === undefined) return NaN;
+      if (typeof v === 'number') return v;
+      let s = String(v).trim();
+      const lastDot = s.lastIndexOf('.');
+      const lastComma = s.lastIndexOf(',');
+      if (lastDot !== -1 && lastComma !== -1) {
+        const dec = Math.max(lastDot,lastComma);
+        s = s.replace(/[.,]/g,'');
+        s = s.slice(0,dec)+'.'+s.slice(dec);
+        return Number.parseFloat(s);
+      }
+      if (lastComma !== -1 && lastDot === -1) {
+        s = s.replace(/\./g,'').replace(',', '.');
+        return Number.parseFloat(s);
+      }
+      return Number.parseFloat(s.replace(/[^0-9.-]/g,''));
+    }
 
-function fetchData() {
-    fetch(apiURL)
-    .then(res => res.json())
-    .then(json => {
-        const data = json.data;
-        document.getElementById("update-time").textContent = "Son Güncelleme: " + Object.values(data)[0].tarih;
-        renderData(data);
-    })
-    .catch(err => console.error(err));
-}
+    let RAW = {}; // { code: {...} }
 
-function renderData(data) {
-    const container = document.getElementById("data-container");
-    container.innerHTML = "";
-    
-    let list = currentTab === "doviz" ? dovizList : altinList;
-    
-    list.forEach(code => {
-        if(data[code]) {
-            let alis = parseFloat(data[code].alis);
-            let satis = parseFloat(data[code].satis);
-            
-            // Döviz 3 hane, Altın 2 hane
-            if(currentTab === "doviz") {
-                alis = alis.toFixed(3);
-                satis = satis.toFixed(3);
-            } else {
-                alis = alis.toFixed(2);
-                satis = satis.toFixed(2);
-            }
-            
-            container.innerHTML += `
-                <div class="card">
-                    <div class="code">${code}</div>
-                    <div class="prices">
-                        <div>Alış: ${alis}</div>
-                        <div>Satış: ${satis}</div>
-                    </div>
-                </div>
-            `;
-        }
+    // Sekme geçişleri
+    const vDoviz = document.getElementById('view-doviz');
+    const vAltin = document.getElementById('view-altin');
+    const vDonus = document.getElementById('view-donus');
+    function showTab(name){
+      document.getElementById('tab-doviz').classList.toggle('active', name==='doviz');
+      document.getElementById('tab-altin').classList.toggle('active', name==='altin');
+      document.getElementById('tab-donus').classList.toggle('active', name==='donus');
+      vDoviz.classList.toggle('hide', name!=='doviz');
+      vAltin.classList.toggle('hide', name!=='altin');
+      vDonus.classList.toggle('hide', name!=='donus');
+    }
+    document.getElementById('tab-doviz').onclick = ()=>showTab('doviz');
+    document.getElementById('tab-altin').onclick = ()=>showTab('altin');
+    document.getElementById('tab-donus').onclick = ()=>showTab('donus');
+
+    // Tablolar
+    function renderTable(codes, tbodyId, decimals){
+      const tbody = document.getElementById(tbodyId);
+      tbody.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      codes.forEach(code=>{
+        const r = RAW[code];
+        if(!r) return;
+        const al = toNum(r.alis), sa = toNum(r.satis);
+        const dAl = decimals===3 ? fmt3.format(al) : fmt2.format(al);
+        const dSa = decimals===3 ? fmt3.format(sa) : fmt2.format(sa);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="name">${code}</td>
+          <td class="hide-sm">${r.tarih || ''}</td>
+          <td class="money">${dAl}</td>
+          <td class="money">${dSa}</td>`;
+        frag.appendChild(tr);
+      });
+      tbody.appendChild(frag);
+    }
+
+    // Dönüştürücü
+    const fxCode = document.getElementById('fx-code');
+    const fxDir = document.getElementById('fx-dir');
+    const fxSideSeg = document.getElementById('fx-side');
+    const fxAmount = document.getElementById('fx-amount');
+    const fxRes = document.getElementById('fx-result');
+    const fxNote = document.getElementById('fx-note');
+    const updDoviz = document.getElementById('upd-doviz');
+    const updAltin = document.getElementById('upd-altin');
+    const updDonus = document.getElementById('upd-donus');
+    const mAlis = document.getElementById('fx-m-alis');
+    const mSatis = document.getElementById('fx-m-satis');
+
+    fxSideSeg.addEventListener('click', (e)=>{
+      if(e.target.tagName==='BUTTON'){
+        fxSideSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+        e.target.classList.add('active');
+        computeFX();
+      }
     });
-}
+    fxDir.onchange = computeFX;
+    fxAmount.oninput = computeFX;
+    mAlis.oninput = computeFX;
+    mSatis.oninput = computeFX;
+    fxCode.onchange = computeFX;
 
-function showTab(tab) {
-    currentTab = tab;
-    document.querySelectorAll(".tab").forEach(btn => btn.classList.remove("active"));
-    document.querySelector(`.tab:nth-child(${tab === "doviz" ? 1 : 2})`).classList.add("active");
-    fetchData();
-}
+    function fillFXSelect(){
+      fxCode.innerHTML = '';
+      DOVIZ_CODES.filter(c=>RAW[c]).forEach(c=>{
+        const r = RAW[c];
+        const opt = document.createElement('option');
+        const a = fmt3.format(toNum(r.alis));
+        const s = fmt3.format(toNum(r.satis));
+        opt.value = c; opt.textContent = `${c} • Alış ${a} / Satış ${s}`;
+        fxCode.appendChild(opt);
+      });
+    }
 
-fetchData();
-setInterval(fetchData, 10000);
-</script>
+    function computeFX(){
+      const code = fxCode.value;
+      const side = fxSideSeg.querySelector('button.active').dataset.side; // 'alis' | 'satis'
+      const dir = fxDir.value; // 'toTRY' | 'fromTRY'
+      const amt = Number(fxAmount.value) || 0;
+      const row = RAW[code];
+      if(!row){ fxRes.textContent='—'; fxNote.textContent='—'; return; }
 
+      // Marj (yüzde): alışta düşür, satışta artır
+      const malis = Math.max(0, Number(mAlis.value)||0)/100;
+      const msatis = Math.max(0, Number(mSatis.value)||0)/100;
+
+      const base = toNum(row[side]);
+      const used = side==='alis' ? base*(1 - malis) : base*(1 + msatis);
+
+      let result, unit;
+      if (dir==='toTRY'){ // Döviz -> TL
+        result = amt * used;
+        unit = '₺';
+      }else{ // TL -> Döviz
+        result = amt / used;
+        unit = code.replace('TRY','');
+      }
+
+      fxRes.textContent = dir==='toTRY' ? fmtTRY.format(result) : `${fmt3.format(result)} ${unit}`;
+      fxNote.textContent = `${code} ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → marjlı: ${fmt3.format(used)} • Miktar: ${amt}`;
+    }
+
+    async function load(){
+      try{
+        const res = await fetch(ENDPOINT, { cache:'no-store' });
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const root = await res.json(); // { meta, data:{...} }
+        RAW = root?.data || {};
+        const any = Object.values(RAW)[0];
+        const upd = `Son güncelleme: ${any?.tarih || '-'}`;
+        updDoviz.textContent = upd;
+        updAltin.textContent = upd;
+        updDonus.textContent = upd;
+
+        // Tablolar
+        renderTable(DOVIZ_CODES, 'tbody-doviz', 3);
+        renderTable(ALTIN_CODES, 'tbody-altin', 2);
+
+        // Dönüştürücü
+        fillFXSelect();
+        computeFX();
+      }catch(e){
+        console.error(e);
+      }
+    }
+
+    // Başlat
+    showTab('doviz');
+    load();
+    setInterval(load, 30_000);
+  </script>
 </body>
 </html>
