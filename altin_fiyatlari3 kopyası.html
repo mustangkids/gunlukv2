@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Harem Altın Fiyatları — Canlı</title>
+  <meta name="description" content="Harem Altın JSON kaynağından canlı fiyatları gösteren hafif web uygulaması." />
+  <style>
+    :root{
+      --bg: #0b0c0f;          /* koyu arka plan */
+      --card: #12141a;        /* kart arka planı */
+      --muted: #8b93a7;       /* ikincil metin */
+      --fg: #e6e9f2;          /* ana metin */
+      --brand: #f5bf3e;       /* altın vurgusu */
+      --ok: #23c55e;
+      --err: #ef4444;
+      --ring: #ffffff22;
+      --border: #1f2430;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background:var(--bg); color:var(--fg);}
+    .container{max-width:1000px; margin:0 auto; padding:24px;}
+    header{display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:16px}
+    .title{display:flex; align-items:center; gap:12px}
+    .logo{width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg, #373b44, #0f0f10); position:relative; box-shadow:0 8px 24px #00000055}
+    .logo::after{content:""; position:absolute; inset:6px; border-radius:8px; background:linear-gradient(135deg, #f7e08f, #caa33a);}
+    h1{font-size:20px; margin:0; letter-spacing:.2px}
+    .sub{font-size:12px; color:var(--muted)}
+    .controls{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    button, .btn{appearance:none; border:none; background:var(--card); color:var(--fg); padding:10px 12px; border-radius:12px; cursor:pointer; box-shadow:0 0 0 1px var(--border); transition:.15s transform, .15s background;}
+    button:hover{background:#171a22}
+    button:active{transform:scale(.98)}
+    .brand{background:linear-gradient(135deg,#f5bf3e,#d09d16); color:#1a1205; font-weight:700;}
+    .search{min-width:220px; background:var(--card); border-radius:12px; padding:10px 12px; outline:none; border:1px solid var(--border); color:var(--fg)}
+
+    .card{background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:0 20px 40px #00000055; overflow:hidden}
+    .meta{display:flex; gap:12px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border)}
+    .badge{font-size:12px; padding:6px 8px; border-radius:999px; background:#171a22; border:1px solid var(--border); color:var(--muted)}
+
+    table{width:100%; border-collapse:separate; border-spacing:0}
+    thead th{font-size:12px; color:var(--muted); text-align:left; padding:12px 14px; position:sticky; top:0; background:var(--card); border-bottom:1px solid var(--border);}
+    tbody td{padding:14px; border-bottom:1px solid var(--border);}
+    tbody tr:hover{background:#141821}
+    .name{font-weight:600}
+    .unit{color:var(--muted); font-size:12px}
+    .money{font-variant-numeric: tabular-nums; text-align:right}
+    .status{display:flex; gap:8px; align-items:center; margin-left:auto}
+
+    .footer{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; font-size:12px; color:var(--muted)}
+    .link{color:var(--fg); opacity:.8}
+    .link:hover{opacity:1}
+
+    .skeleton{background:linear-gradient(90deg, #12141a, #161922, #12141a); background-size:200% 100%; animation: shimmer 1.2s infinite; border-radius:8px; height:16px}
+    @keyframes shimmer{0%{background-position:200% 0} 100%{background-position:-200% 0}}
+
+    .toast{position:fixed; right:16px; bottom:16px; padding:12px 14px; border-radius:12px; background:#141821; border:1px solid var(--border); color:var(--fg); box-shadow:0 8px 24px #00000066; opacity:0; transform:translateY(8px); transition:.2s;}
+    .toast.show{opacity:1; transform:translateY(0)}
+
+    @media (max-width: 640px){
+      .hide-sm{display:none}
+      h1{font-size:18px}
+      .container{padding:16px}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="title">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Harem Altın — Canlı Fiyatlar</h1>
+          <div class="sub">Kaynak: canlipiyasalar.haremaltin.com • JSON</div>
+        </div>
+      </div>
+      <div class="controls">
+        <input id="q" class="search" placeholder="Ara: gram, çeyrek, gümüş…" />
+        <button id="refresh" title="Yenile">Yenile</button>
+        <button id="auto" class="brand" title="Otomatik yenile">Oto: Açık</button>
+      </div>
+    </header>
+
+    <section class="card" aria-live="polite">
+      <div class="meta">
+        <span id="updated" class="badge">Son güncelleme: —</span>
+        <span id="count" class="badge hide-sm">— kayıt</span>
+        <span id="status" class="badge hide-sm">Durum: bağlanıyor…</span>
+      </div>
+      <div style="overflow:auto; max-height:min(70vh, 900px)">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th data-key="name" class="sort">Ürün</th>
+              <th class="hide-sm">Birim</th>
+              <th data-key="buy" class="sort" style="text-align:right">Alış</th>
+              <th data-key="sell" class="sort" style="text-align:right">Satış</th>
+              <th class="hide-sm" data-key="type" class="sort">Tür</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div id="skeleton" style="padding:16px; display:none">
+          <div class="skeleton" style="height:24px; width:60%; margin:6px 0"></div>
+          <div class="skeleton" style="height:24px; width:80%; margin:6px 0"></div>
+          <div class="skeleton" style="height:24px; width:70%; margin:6px 0"></div>
+          <div class="skeleton" style="height:24px; width:50%; margin:6px 0"></div>
+        </div>
+      </div>
+      <div class="footer">
+        <div>Not: Fiyatlar bilgilendirme amaçlıdır. Resmî fiyatlar için ilgili kurumları kontrol ediniz.</div>
+        <a class="link hide-sm" href="https://canlipiyasalar.haremaltin.com/tmp/altin.json?dil_kodu=tr" target="_blank" rel="noopener">JSON kaynağı</a>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const ENDPOINT = "https://canlipiyasalar.haremaltin.com/tmp/altin.json?dil_kodu=tr";
+    const TRY = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 2 });
+
+    let AUTO = true;
+    let TIMER = null;
+    let DATA = [];
+    let SORT = { key: 'sell', dir: 'desc' };
+
+    const el = (id)=>document.getElementById(id);
+    const tbody = el('tbody');
+
+    function toast(msg){
+      const t = el('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'), 2000);
+    }
+
+    function parseItem(raw){
+      // Şema esnekliği: farklı alan adlarını karşıla.
+      const name = (raw.name ?? raw.ad ?? raw.urun ?? '').toString();
+      const unit = (raw.unit ?? raw.birim ?? 'adet').toString();
+      const type = (raw.type ?? raw.kategori ?? (name.includes('Gümüş')?'Gümüş':'Altın')).toString();
+      const buy = toNum(raw.buy ?? raw.alis ?? raw["alıs"] ?? raw.Bid ?? raw.buying);
+      const sell = toNum(raw.sell ?? raw.satis ?? raw["satıs"] ?? raw.Ask ?? raw.selling);
+      return { name, unit, type, buy, sell };
+    }
+
+    function toNum(v){
+      if (v==null) return NaN;
+      const s = String(v).replace(/\./g, '').replace(/,/g,'.').replace(/[^0-9.\-]/g,'');
+      return Number.parseFloat(s);
+    }
+
+    function formatMoney(x){
+      if (Number.isFinite(x)) return TRY.format(x);
+      return '—';
+    }
+
+    function render(rows){
+      tbody.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      for(const r of rows){
+        const tr = document.createElement('tr');
+        const tdName = document.createElement('td');
+        tdName.innerHTML = `<div class="name">${r.name}</div><div class="unit">${r.unit}</div>`;
+        const tdUnit = document.createElement('td'); tdUnit.className = 'hide-sm'; tdUnit.textContent = r.unit;
+        const tdBuy = document.createElement('td'); tdBuy.className = 'money'; tdBuy.textContent = formatMoney(r.buy);
+        const tdSell = document.createElement('td'); tdSell.className = 'money'; tdSell.textContent = formatMoney(r.sell);
+        const tdType = document.createElement('td'); tdType.className = 'hide-sm'; tdType.textContent = r.type;
+        tr.append(tdName, tdUnit, tdBuy, tdSell, tdType);
+        frag.appendChild(tr);
+      }
+      tbody.appendChild(frag);
+      el('count').textContent = `${rows.length} kayıt`;
+    }
+
+    function sortRows(rows){
+      const { key, dir } = SORT;
+      const sign = dir === 'asc' ? 1 : -1;
+      return [...rows].sort((a,b)=>{
+        const va = (typeof a[key] === 'number') ? a[key] : String(a[key]).localeCompare(String(b[key]), 'tr');
+        const vb = (typeof b[key] === 'number') ? b[key] : String(b[key]).localeCompare(String(a[key]), 'tr');
+        if (typeof va === 'number' && typeof vb === 'number') return sign * (va - vb);
+        return sign * String(a[key]).localeCompare(String(b[key]), 'tr');
+      });
+    }
+
+    function applyFilter(){
+      const q = el('q').value.trim().toLowerCase();
+      let rows = DATA;
+      if (q){
+        rows = rows.filter(r => `${r.name} ${r.unit} ${r.type}`.toLowerCase().includes(q));
+      }
+      rows = sortRows(rows);
+      render(rows);
+    }
+
+    function setUpdated(ts){
+      const d = ts ? new Date(ts) : new Date();
+      const text = d.toLocaleString('tr-TR', { day: '2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+      el('updated').textContent = `Son güncelleme: ${text}`;
+    }
+
+    async function load(){
+      el('status').textContent = 'Durum: bağlanıyor…';
+      el('skeleton').style.display = 'block';
+      try{
+        const res = await fetch(ENDPOINT, { cache: 'no-store' });
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (Array.isArray(data.items) ? data.items : []);
+        if (!list.length) throw new Error('Boş veri');
+        DATA = list.map(parseItem).filter(x=>x.name);
+        const serverTs = data.fetchedAt || data.time || data.updatedAt || null;
+        setUpdated(serverTs);
+        applyFilter();
+        el('status').textContent = 'Durum: bağlı';
+        toast('Fiyatlar güncellendi');
+      }catch(err){
+        console.error(err);
+        el('status').textContent = 'Durum: hata';
+        toast('Veri alınamadı');
+        // Basit mock ile ekranda bir şey gösterelim
+        DATA = [
+          { name:'Gram Altın', unit:'gr', type:'Altın', buy:2575.50, sell:2590.80 },
+          { name:'Çeyrek Altın', unit:'adet', type:'Altın', buy:4180.00, sell:4300.00 },
+          { name:'Gümüş (Gram)', unit:'gr', type:'Gümüş', buy:31.2, sell:32.0 },
+        ];
+        setUpdated();
+        applyFilter();
+      } finally {
+        el('skeleton').style.display = 'none';
+      }
+    }
+
+    function schedule(){
+      if (TIMER) clearInterval(TIMER);
+      if (AUTO){
+        TIMER = setInterval(load, 60_000); // 60 sn'de bir
+      }
+    }
+
+    // Etkileşimler
+    el('q').addEventListener('input', applyFilter);
+    el('refresh').addEventListener('click', load);
+    el('auto').addEventListener('click', ()=>{
+      AUTO = !AUTO;
+      el('auto').textContent = `Oto: ${AUTO? 'Açık':'Kapalı'}`;
+      el('auto').classList.toggle('brand', AUTO);
+      schedule();
+    });
+
+    // Tablo başlıklarında sıralama
+    document.querySelectorAll('th.sort, th[data-key]').forEach(th=>{
+      th.style.cursor = 'pointer';
+      th.addEventListener('click', ()=>{
+        const key = th.dataset.key || 'sell';
+        SORT.dir = (SORT.key === key && SORT.dir === 'desc') ? 'asc' : 'desc';
+        SORT.key = key;
+        applyFilter();
+      });
+    });
+
+    // İlk yükleme
+    load();
+    schedule();
+  </script>
+</body>
+</html>
