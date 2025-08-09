@@ -57,10 +57,8 @@
   .result{font-size:26px;font-weight:900}
   .hint{color:var(--muted);font-size:13px}
   .hide{display:none !important}
-  .conv-top{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px}
-  .mini{font-size:12px;color:var(--muted)}
   .tog{border:none;background:#171a22;color:var(--fg);padding:8px 12px;border-radius:999px;cursor:pointer;box-shadow:0 0 0 1px var(--border);font-weight:700}
-  .on{background:#1f2a44}
+  .tog.icon{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;font-size:18px}
   .flex{display:flex;gap:10px;flex-wrap:wrap}
   @media (min-width:640px){ .conv{grid-template-columns:repeat(2,1fr)} }
 </style>
@@ -112,11 +110,8 @@
           <span class="badge">İki yön: Döviz→TL / TL→Döviz</span>
           <span id="marjState" class="badge">Marj: açık • %0.15 / %0.15</span>
         </div>
-        <button id="btnToggleMargin" class="tog">⚙️ Marjı Göster</button>
-      </div>
-
-      <div class="conv-top mini">
-        <div>Not: Marj **varsayılan açık**. Alanı gizli; istersem ayarlarını açıp değiştirebilirim.</div>
+        <!-- Sadece simge -->
+        <button id="btnToggleMargin" class="tog icon" title="Marj ayarları">⚙️</button>
       </div>
 
       <div class="conv">
@@ -143,7 +138,7 @@
           <input id="fxAmt" type="number" step="0.01" value="500"/>
         </div>
 
-        <!-- Marj alanları: VARSAYILAN GİZLİ. "⚙️ Marjı Göster" ile açılır. -->
+        <!-- Marj alanları: varsayılan GİZLİ. ⚙️ ile aç/kapa -->
         <div id="marginBox" class="field hide" style="grid-column:1/-1">
           <label>Marj (%, alış ↓ / satış ↑)</label>
           <div style="display:flex;gap:8px">
@@ -313,7 +308,7 @@
     });
   }
 
-  // Marj: Varsayılan AÇIK. UI gizli; butonla aç/kapa.
+  // Marj: Varsayılan AÇIK. UI gizli; ⚙️ ile açıp yüzde değiştirebilirsin.
   let useMargin = true;
   function pct(v){ return Math.max(0, Number(v)||0)/100; }
   function adjusted(side, base, mAlisPct, mSatisPct){
@@ -322,8 +317,10 @@
   }
 
   btnToggleMargin.onclick = ()=>{
-    const show = marginBox.classList.toggle('hide') === false; // false dönerse yeni durum görünür
-    btnToggleMargin.textContent = show ? '⚙️ Marjı Gizle' : '⚙️ Marjı Göster';
+    const isHidden = marginBox.classList.contains('hide');
+    marginBox.classList.toggle('hide', !isHidden ? true : false);
+    // buton metni hep simge; tooltip değişsin
+    btnToggleMargin.title = marginBox.classList.contains('hide') ? 'Marj ayarlarını göster' : 'Marj ayarlarını gizle';
   };
 
   fxCode.onchange = computeConv;
@@ -346,7 +343,7 @@
     const row  = RAW[code];
     if(!row){ fxOut.textContent='—'; fxNote.textContent='—'; return; }
 
-    // Varsayılan %0.15 / %0.15; UI açıksa oradan al
+    // Varsayılan %0.15 / %0.15; UI kapalıysa bu kullanılır
     const mAlisPct  = marginBox.classList.contains('hide') ? 0.0015 : pct(document.getElementById('mAlis').value);
     const mSatisPct = marginBox.classList.contains('hide') ? 0.0015 : pct(document.getElementById('mSatis').value);
     marjState.textContent = `Marj: ${useMargin?'açık':'kapalı'} • ${(mAlisPct*100).toFixed(2)}% / ${(mSatisPct*100).toFixed(2)}%`;
@@ -367,9 +364,9 @@
 
   // Başlat
   function start(){
-    show('fx');              // ilk sekme: Döviz
-    marginBox.classList.add('hide'); // marj alanı gizli (marj uygulanıyor)
-    btnToggleMargin.textContent = '⚙️ Marjı Göster';
+    show('fx');                    // ilk sekme: Döviz
+    marginBox.classList.add('hide'); // marj alanı gizli (marj uygulanır)
+    btnToggleMargin.title = 'Marj ayarlarını göster';
     load();
     setInterval(load, 30000); // 30 sn
   }
