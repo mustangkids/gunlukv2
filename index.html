@@ -4,53 +4,44 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Canlı Piyasalar — Döviz • Altın • Dönüştürücü</title>
+  <meta name="description" content="Cloudflare Worker üzerinden Harem JSON verisiyle canlı döviz ve altın fiyatları + dönüştürücü." />
   <style>
-    :root{
-      --bg: #0b0c0f; --card: #12141a; --muted: #8b93a7; --fg: #e6e9f2; --brand: #f5bf3e; --border: #1f2430;
-      --ok:#22c55e; --accent:#f59e0b;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
+    :root{ --bg:#0b0c0f; --card:#12141a; --muted:#8b93a7; --fg:#e6e9f2; --brand:#f5bf3e; --border:#1f2430; }
+    *{box-sizing:border-box} html,body{height:100%}
     body{margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); color:var(--fg);}
-    .container{max-width:1000px; margin:0 auto; padding:16px;}
-    header{display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:12px}
+    .container{max-width:1000px; margin:0 auto; padding:24px;}
+    header{display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:16px}
     .title{display:flex; align-items:center; gap:12px}
     .logo{width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg, #373b44, #0f0f10); position:relative; box-shadow:0 8px 24px #00000055}
     .logo::after{content:""; position:absolute; inset:6px; border-radius:8px; background:linear-gradient(135deg, #f7e08f, #caa33a);}
-    h1{font-size:20px; margin:0}
-    .sub{font-size:12px; color:var(--muted)}
+    h1{font-size:20px; margin:0} .sub{font-size:12px; color:var(--muted)}
+    .controls{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    button{appearance:none; border:none; background:var(--card); color:var(--fg); padding:10px 12px; border-radius:12px; cursor:pointer; box-shadow:0 0 0 1px var(--border);}
+    .brand{background:linear-gradient(135deg,#f5bf3e,#d09d16); color:#1a1205; font-weight:700;}
     .tabs{display:flex; gap:8px; flex-wrap:wrap}
     .tab{appearance:none; border:none; padding:10px 14px; border-radius:12px; cursor:pointer; background:#171a22; color:var(--fg); box-shadow:0 0 0 1px var(--border); font-weight:700}
     .tab.active{background:linear-gradient(135deg,#f5bf3e,#d09d16); color:#1a1205}
-    .badge{font-size:12px; padding:6px 8px; border-radius:999px; background:#171a22; border:1px solid var(--border); color:var(--muted)}
-    .card{background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:0 20px 40px #00000055; overflow:hidden; margin-top:10px}
+    .card{background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:0 20px 40px #00000055; overflow:hidden}
     .meta{display:flex; gap:12px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border)}
+    .badge{font-size:12px; padding:6px 8px; border-radius:999px; background:#171a22; border:1px solid var(--border); color:var(--muted)}
     table{width:100%; border-collapse:separate; border-spacing:0}
     thead th{font-size:12px; color:var(--muted); text-align:left; padding:12px 14px; position:sticky; top:0; background:var(--card); border-bottom:1px solid var(--border);}
-    tbody td{padding:14px; border-bottom:1px solid var(--border);}
-    tbody tr:hover{background:#141821}
-    .name{font-weight:600}
-    .unit{color:var(--muted); font-size:12px}
-    .money{font-variant-numeric: tabular-nums; text-align:right}
+    tbody td{padding:14px; border-bottom:1px solid var(--border);} tbody tr:hover{background:#141821}
+    .name{font-weight:600} .unit{color:var(--muted); font-size:12px} .money{font-variant-numeric: tabular-nums; text-align:right}
     .footer{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; font-size:12px; color:var(--muted)}
+    .link{color:var(--fg); opacity:.8} .link:hover{opacity:1}
     .hide{display:none !important}
-    .controls{display:flex; gap:12px; flex-wrap:wrap; align-items:end; padding:12px 16px}
+    /* Converter */
+    .conv{padding:16px}
+    .grid{display:grid; grid-template-columns:repeat(2,minmax(200px,1fr)); gap:12px}
     .field{display:flex; flex-direction:column; gap:6px}
     .field label{font-size:12px; color:var(--muted)}
-    input, select{background:#0f1218; color:var(--fg); border:1px solid var(--border); border-radius:12px; padding:10px 12px; outline:none; min-width:140px}
+    input, select{background:#0f1218; color:var(--fg); border:1px solid var(--border); border-radius:12px; padding:10px 12px; outline:none}
     .seg{display:flex; background:#0f1218; border:1px solid var(--border); border-radius:12px; overflow:hidden}
     .seg button{flex:1; border:none; background:transparent; color:var(--fg); padding:10px 12px; cursor:pointer; font-weight:700}
     .seg button.active{background:#222938}
-    .result{font-size:20px; font-weight:800; color:#e6e9f2}
-    .muted{color:var(--muted)}
-    .pill{display:inline-block; padding:3px 8px; border-radius:999px; background:#171a22; border:1px solid var(--border); font-size:12px}
-    a.link{color:var(--fg); opacity:.8; text-decoration:none}
-    a.link:hover{opacity:1}
-    @media (max-width: 640px){
-      .container{padding:12px}
-      h1{font-size:18px}
-      .hide-sm{display:none}
-    }
+    .result{font-size:20px; font-weight:800; margin-top:2px}
+    @media (max-width: 640px){ .hide-sm{display:none} h1{font-size:18px} .container{padding:16px} .grid{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
@@ -60,24 +51,26 @@
         <div class="logo" aria-hidden="true"></div>
         <div>
           <h1>Canlı Piyasalar — Döviz • Altın • Dönüştürücü</h1>
-          <div class="sub">Kaynak: Cloudflare Worker → Harem JSON</div>
+          <div class="sub">Kaynak: workers.dev → canlipiyasalar.haremaltin.com (JSON)</div>
         </div>
       </div>
-      <div class="tabs">
-        <button id="tab-doviz" class="tab active">💱 Döviz</button>
-        <button id="tab-altin" class="tab">🏅 Altın & Gümüş</button>
-        <button id="tab-donus" class="tab">🔁 Dönüştürücü</button>
+      <div class="controls">
+        <div class="tabs">
+          <button id="tab-doviz" class="tab active">💱 Döviz</button>
+          <button id="tab-altin" class="tab">🏅 Altın & Gümüş</button>
+          <button id="tab-conv" class="tab">🔁 Dönüştürücü</button>
+        </div>
       </div>
     </header>
 
-    <!-- Döviz Tab -->
+    <!-- Döviz -->
     <section id="view-doviz" class="card">
       <div class="meta">
         <span id="upd-doviz" class="badge">Son güncelleme: —</span>
         <span class="badge hide-sm">Gösterim: Döviz 3 hane</span>
       </div>
       <div style="overflow:auto; max-height:min(70vh, 900px)">
-        <table>
+        <table id="tbl-doviz">
           <thead>
             <tr>
               <th>Kod</th>
@@ -91,18 +84,18 @@
       </div>
       <div class="footer">
         <div>Not: Fiyatlar bilgilendirme amaçlıdır.</div>
-        <a class="link hide-sm" href="https://lingering-scene-da42.mehmetklc1907.workers.dev/" target="_blank" rel="noopener">JSON</a>
+        <a class="link hide-sm" href="https://lingering-scene-da42.mehmetklc1907.workers.dev/" target="_blank" rel="noopener">JSON kaynağı</a>
       </div>
     </section>
 
-    <!-- Altın Tab -->
+    <!-- Altın -->
     <section id="view-altin" class="card hide">
       <div class="meta">
         <span id="upd-altin" class="badge">Son güncelleme: —</span>
         <span class="badge hide-sm">Gösterim: Altın & Gümüş 2 hane</span>
       </div>
       <div style="overflow:auto; max-height:min(70vh, 900px)">
-        <table>
+        <table id="tbl-altin">
           <thead>
             <tr>
               <th>Kod</th>
@@ -116,50 +109,52 @@
       </div>
       <div class="footer">
         <div>Not: Fiyatlar bilgilendirme amaçlıdır.</div>
-        <a class="link hide-sm" href="https://lingering-scene-da42.mehmetklc1907.workers.dev/" target="_blank" rel="noopener">JSON</a>
+        <a class="link hide-sm" href="https://lingering-scene-da42.mehmetklc1907.workers.dev/" target="_blank" rel="noopener">JSON kaynağı</a>
       </div>
     </section>
 
-    <!-- Dönüştürücü Tab -->
-    <section id="view-donus" class="card hide">
+    <!-- Dönüştürücü -->
+    <section id="view-conv" class="card hide">
       <div class="meta">
-        <span id="upd-donus" class="badge">Son güncelleme: —</span>
-        <span class="badge">Marj: Alış ↓, Satış ↑</span>
+        <span id="upd-conv" class="badge">Son güncelleme: —</span>
+        <span class="badge hide-sm">Marj: Alış ↓ • Satış ↑</span>
       </div>
-      <div class="controls">
-        <div class="field">
-          <label>Çift (Döviz)</label>
-          <select id="fx-code"></select>
-        </div>
-        <div class="field">
-          <label>Yön</label>
-          <select id="fx-dir">
-            <option value="toTRY">Döviz → TL</option>
-            <option value="fromTRY">TL → Döviz</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Tür</label>
-          <div id="fx-side" class="seg">
-            <button type="button" data-side="alis" class="active">Alış</button>
-            <button type="button" data-side="satis">Satış</button>
+      <div class="conv">
+        <div class="grid">
+          <div class="field">
+            <label>Çift (Döviz)</label>
+            <select id="fx-code"></select>
           </div>
-        </div>
-        <div class="field">
-          <label>Miktar</label>
-          <input id="fx-amount" type="number" step="0.01" value="500" />
-        </div>
-        <div class="field">
-          <label>Marj (%, alış / satış)</label>
-          <div style="display:flex; gap:8px">
-            <input id="fx-m-alis" type="number" step="0.01" value="0.15" title="Alışta yüzde düşür (örn 0.15)" />
-            <input id="fx-m-satis" type="number" step="0.01" value="0.15" title="Satışta yüzde artır (örn 0.15)" />
+          <div class="field">
+            <label>Yön</label>
+            <select id="fx-dir">
+              <option value="toTRY">Döviz → TL</option>
+              <option value="fromTRY">TL → Döviz</option>
+            </select>
           </div>
-        </div>
-        <div class="field" style="min-width:260px">
-          <label>Sonuç</label>
-          <div id="fx-result" class="result">—</div>
-          <div id="fx-note" class="muted">—</div>
+          <div class="field">
+            <label>Tür</label>
+            <div id="fx-side" class="seg">
+              <button type="button" data-side="alis" class="active">Alış</button>
+              <button type="button" data-side="satis">Satış</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Miktar</label>
+            <input id="fx-amount" type="number" step="0.01" value="500" />
+          </div>
+          <div class="field">
+            <label>Marj (%, alış / satış)</label>
+            <div style="display:flex; gap:8px">
+              <input id="fx-m-alis"  type="number" step="0.01" value="0.15" title="Alışta yüzde düşür (ör. 0.15)" />
+              <input id="fx-m-satis" type="number" step="0.01" value="0.15" title="Satışta yüzde artır (ör. 0.15)" />
+            </div>
+          </div>
+          <div class="field" style="grid-column:1/-1">
+            <label>Sonuç</label>
+            <div id="fx-result" class="result">—</div>
+            <div id="fx-note" class="sub" style="margin-top:6px">—</div>
+          </div>
         </div>
       </div>
     </section>
@@ -167,13 +162,14 @@
 
   <script>
     const ENDPOINT = "https://lingering-scene-da42.mehmetklc1907.workers.dev/";
-    // Kümeler (öncekinden)
+
+    // Kod kümeleri (öncekinden)
     const DOVIZ_CODES = ["USDTRY","EURTRY","GBPTRY","CHFTRY","AUDTRY","CADTRY","SARTRY","DKKTRY","SEKTRY","NOKTRY","JPYTRY","EURUSD","USDJPY","USDCAD","USDCHF","GBPUSD","AUDUSD"];
     const ALTIN_CODES = ["ALTIN","KULCEALTIN","ONS","AYAR22","AYAR14","CEYREK_YENI","CEYREK_ESKI","YARIM_YENI","YARIM_ESKI","TEK_YENI","TEK_ESKI","ATA_YENI","ATA_ESKI","ATA5_YENI","ATA5_ESKI","GREMESE_YENI","GREMESE_ESKI","GUMUSTRY","GUMUSUSD","XAGUSD","XAUXAG","XPTUSD","XPDUSD","PLATIN","PALADYUM"];
 
-    const fmt3 = new Intl.NumberFormat('tr-TR',{minimumFractionDigits:3, maximumFractionDigits:3});
-    const fmt2 = new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2, maximumFractionDigits:2});
-    const fmtTRY = new Intl.NumberFormat('tr-TR',{style:'currency', currency:'TRY', minimumFractionDigits:2, maximumFractionDigits:2});
+    const fmt3 = new Intl.NumberFormat('tr-TR', { minimumFractionDigits:3, maximumFractionDigits:3 });
+    const fmt2 = new Intl.NumberFormat('tr-TR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+    const fmtTRY = new Intl.NumberFormat('tr-TR', { style:'currency', currency:'TRY', minimumFractionDigits:2, maximumFractionDigits:2 });
 
     function toNum(v){
       if (v === null || v === undefined) return NaN;
@@ -182,9 +178,9 @@
       const lastDot = s.lastIndexOf('.');
       const lastComma = s.lastIndexOf(',');
       if (lastDot !== -1 && lastComma !== -1) {
-        const dec = Math.max(lastDot,lastComma);
+        const dec = Math.max(lastDot, lastComma);
         s = s.replace(/[.,]/g,'');
-        s = s.slice(0,dec)+'.'+s.slice(dec);
+        s = s.slice(0, dec) + '.' + s.slice(dec);
         return Number.parseFloat(s);
       }
       if (lastComma !== -1 && lastDot === -1) {
@@ -194,23 +190,27 @@
       return Number.parseFloat(s.replace(/[^0-9.-]/g,''));
     }
 
-    let RAW = {}; // { code: {...} }
+    let RAW = {}; // { CODE: { alis, satis, tarih, ... } }
 
-    // Sekme geçişleri
-    const vDoviz = document.getElementById('view-doviz');
-    const vAltin = document.getElementById('view-altin');
-    const vDonus = document.getElementById('view-donus');
-    function showTab(name){
-      document.getElementById('tab-doviz').classList.toggle('active', name==='doviz');
-      document.getElementById('tab-altin').classList.toggle('active', name==='altin');
-      document.getElementById('tab-donus').classList.toggle('active', name==='donus');
-      vDoviz.classList.toggle('hide', name!=='doviz');
-      vAltin.classList.toggle('hide', name!=='altin');
-      vDonus.classList.toggle('hide', name!=='donus');
+    // Sekmeler
+    const tabD = document.getElementById('tab-doviz');
+    const tabA = document.getElementById('tab-altin');
+    const tabC = document.getElementById('tab-conv');
+    const viewD = document.getElementById('view-doviz');
+    const viewA = document.getElementById('view-altin');
+    const viewC = document.getElementById('view-conv');
+
+    function showTab(which){
+      tabD.classList.toggle('active', which==='d');
+      tabA.classList.toggle('active', which==='a');
+      tabC.classList.toggle('active', which==='c');
+      viewD.classList.toggle('hide', which!=='d');
+      viewA.classList.toggle('hide', which!=='a');
+      viewC.classList.toggle('hide', which!=='c');
     }
-    document.getElementById('tab-doviz').onclick = ()=>showTab('doviz');
-    document.getElementById('tab-altin').onclick = ()=>showTab('altin');
-    document.getElementById('tab-donus').onclick = ()=>showTab('donus');
+    tabD.onclick = ()=>showTab('d');
+    tabA.onclick = ()=>showTab('a');
+    tabC.onclick = ()=>showTab('c');
 
     // Tablolar
     function renderTable(codes, tbodyId, decimals){
@@ -219,46 +219,43 @@
       const frag = document.createDocumentFragment();
       codes.forEach(code=>{
         const r = RAW[code];
-        if(!r) return;
-        const al = toNum(r.alis), sa = toNum(r.satis);
-        const dAl = decimals===3 ? fmt3.format(al) : fmt2.format(al);
-        const dSa = decimals===3 ? fmt3.format(sa) : fmt2.format(sa);
+        if (!r) return;
+        const a = toNum(r.alis), s = toNum(r.satis);
+        const da = decimals===3 ? fmt3.format(a) : fmt2.format(a);
+        const ds = decimals===3 ? fmt3.format(s) : fmt2.format(s);
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="name">${code}</td>
           <td class="hide-sm">${r.tarih || ''}</td>
-          <td class="money">${dAl}</td>
-          <td class="money">${dSa}</td>`;
+          <td class="money">${da}</td>
+          <td class="money">${ds}</td>`;
         frag.appendChild(tr);
       });
       tbody.appendChild(frag);
     }
 
-    // Dönüştürücü
-    const fxCode = document.getElementById('fx-code');
-    const fxDir = document.getElementById('fx-dir');
-    const fxSideSeg = document.getElementById('fx-side');
-    const fxAmount = document.getElementById('fx-amount');
-    const fxRes = document.getElementById('fx-result');
-    const fxNote = document.getElementById('fx-note');
-    const updDoviz = document.getElementById('upd-doviz');
-    const updAltin = document.getElementById('upd-altin');
-    const updDonus = document.getElementById('upd-donus');
-    const mAlis = document.getElementById('fx-m-alis');
-    const mSatis = document.getElementById('fx-m-satis');
+    // Dönüştürücü el'leri
+    const updD = document.getElementById('upd-doviz');
+    const updA = document.getElementById('upd-altin');
+    const updC = document.getElementById('upd-conv');
 
-    fxSideSeg.addEventListener('click', (e)=>{
+    const fxCode = document.getElementById('fx-code');
+    const fxDir  = document.getElementById('fx-dir');
+    const fxSide = document.getElementById('fx-side');
+    const fxAmt  = document.getElementById('fx-amount');
+    const fxRes  = document.getElementById('fx-result');
+    const fxNote = document.getElementById('fx-note');
+    const fxMAl  = document.getElementById('fx-m-alis');
+    const fxMSa  = document.getElementById('fx-m-satis');
+
+    fxSide.addEventListener('click', (e)=>{
       if(e.target.tagName==='BUTTON'){
-        fxSideSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+        fxSide.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
         e.target.classList.add('active');
         computeFX();
       }
     });
-    fxDir.onchange = computeFX;
-    fxAmount.oninput = computeFX;
-    mAlis.oninput = computeFX;
-    mSatis.oninput = computeFX;
-    fxCode.onchange = computeFX;
+    [fxCode, fxDir, fxAmt, fxMAl, fxMSa].forEach(el=> el.addEventListener('input', computeFX));
 
     function fillFXSelect(){
       fxCode.innerHTML = '';
@@ -274,29 +271,26 @@
 
     function computeFX(){
       const code = fxCode.value;
-      const side = fxSideSeg.querySelector('button.active').dataset.side; // 'alis' | 'satis'
-      const dir = fxDir.value; // 'toTRY' | 'fromTRY'
-      const amt = Number(fxAmount.value) || 0;
-      const row = RAW[code];
-      if(!row){ fxRes.textContent='—'; fxNote.textContent='—'; return; }
+      if(!code || !RAW[code]){ fxRes.textContent='—'; fxNote.textContent='—'; return; }
 
-      // Marj (yüzde): alışta düşür, satışta artır
-      const malis = Math.max(0, Number(mAlis.value)||0)/100;
-      const msatis = Math.max(0, Number(mSatis.value)||0)/100;
+      const side = fxSide.querySelector('button.active').dataset.side; // 'alis' | 'satis'
+      const dir  = fxDir.value; // 'toTRY' | 'fromTRY'
+      const amt  = Number(fxAmt.value) || 0;
 
-      const base = toNum(row[side]);
-      const used = side==='alis' ? base*(1 - malis) : base*(1 + msatis);
+      const base = toNum(RAW[code][side]);
+      // Marj yüzdesi
+      const mAl = Math.max(0, Number(fxMAl.value)||0) / 100;
+      const mSa = Math.max(0, Number(fxMSa.value)||0) / 100;
+      const used = side==='alis' ? base*(1 - mAl) : base*(1 + mSa);
 
-      let result, unit;
+      let out, unit;
       if (dir==='toTRY'){ // Döviz -> TL
-        result = amt * used;
-        unit = '₺';
+        out = amt * used; unit = '₺';
+        fxRes.textContent = fmtTRY.format(out);
       }else{ // TL -> Döviz
-        result = amt / used;
-        unit = code.replace('TRY','');
+        out = amt / used; unit = code.replace('TRY','');
+        fxRes.textContent = `${fmt3.format(out)} ${unit}`;
       }
-
-      fxRes.textContent = dir==='toTRY' ? fmtTRY.format(result) : `${fmt3.format(result)} ${unit}`;
       fxNote.textContent = `${code} ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → marjlı: ${fmt3.format(used)} • Miktar: ${amt}`;
     }
 
@@ -307,27 +301,23 @@
         const root = await res.json(); // { meta, data:{...} }
         RAW = root?.data || {};
         const any = Object.values(RAW)[0];
-        const upd = `Son güncelleme: ${any?.tarih || '-'}`;
-        updDoviz.textContent = upd;
-        updAltin.textContent = upd;
-        updDonus.textContent = upd;
+        const updText = `Son güncelleme: ${any?.tarih || '-'}`;
+        updD.textContent = updText; updA.textContent = updText; updC.textContent = updText;
 
-        // Tablolar
         renderTable(DOVIZ_CODES, 'tbody-doviz', 3);
         renderTable(ALTIN_CODES, 'tbody-altin', 2);
 
-        // Dönüştürücü
         fillFXSelect();
         computeFX();
-      }catch(e){
-        console.error(e);
+      }catch(err){
+        console.error(err);
       }
     }
 
     // Başlat
-    showTab('doviz');
+    showTab('d'); // Döviz ilk
     load();
-    setInterval(load, 30_000);
+    setInterval(load, 30_000); // 30 sn
   </script>
 </body>
 </html>
