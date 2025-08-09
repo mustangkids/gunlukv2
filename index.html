@@ -71,6 +71,10 @@
       width: 100%;
     }
   }
+
+  /* --- Üst mini müşteri liste satırı --- */
+  .row.compact{padding:10px}
+  .row .mini{font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -120,9 +124,17 @@
           <span class="badge">İki yön: Döviz→TL / TL→Döviz</span>
           <span id="marjState" class="badge">Marj: açık • %0,247 / %0,247</span>
         </div>
-        <!-- Sadece simge -->
         <button id="btnToggleMargin" class="tog icon" title="Marj ayarları">⚙️</button>
       </div>
+
+      <!-- ÜST MİNİ MÜŞTERİ LİSTESİ (sadece Dönüştürücü sekmesinde) -->
+      <section id="custCard" class="card" style="margin-bottom:10px">
+        <div class="meta">
+          <span class="badge">Müşteriye söylenecek fiyatlar</span>
+          <span class="badge">Marj uygulanmış (3 hane)</span>
+        </div>
+        <div id="listCust" class="list"></div>
+      </section>
 
       <div class="conv">
         <div class="field">
@@ -152,8 +164,8 @@
         <div id="marginBox" class="field hide" style="grid-column:1/-1">
           <label>Marj (%, alış ↓ / satış ↑)</label>
           <div style="display:flex;gap:8px">
-            <input id="mAlis"  type="number" step="0.01" value="0.247" title="Alışta yüzde düşür (ör. 0.247)"/>
-            <input id="mSatis" type="number" step="0.01" value="0.247" title="Satışta yüzde artır (ör. 0.247)"/>
+            <input id="mAlis"  type="number" step="0.001" value="0.247" title="Alışta yüzde düşür (ör. 0.247)"/>
+            <input id="mSatis" type="number" step="0.001" value="0.247" title="Satışta yüzde artır (ör. 0.247)"/>
           </div>
         </div>
 
@@ -192,22 +204,22 @@
   /* Bayrak + sembol */
   function flagFor(code){
     const c = String(code||'').toUpperCase();
-    if (c.startsWith('USD')) return '🇺🇸 $';
-    if (c.startsWith('EUR')) return '🇪🇺 €';
-    if (c.startsWith('GBP')) return '🇬🇧 £';
-    if (c.startsWith('JPY')) return '🇯🇵 ¥';
-    if (c.startsWith('CHF')) return '🇨🇭 ₣';
-    if (c.startsWith('AUD')) return '🇦🇺 $';
-    if (c.startsWith('CAD')) return '🇨🇦 $';
-    if (c.startsWith('SAR')) return '🇸🇦 ر.س';
-    if (c.startsWith('DKK')) return '🇩🇰 kr';
-    if (c.startsWith('SEK')) return '🇸🇪 kr';
-    if (c.startsWith('NOK')) return '🇳🇴 kr';
-    if (c.startsWith('TRY') || c.endsWith('TRY')) return '🇹🇷 ₺';
+    if (c.startsWith('USD')) return '🇺🇸';
+    if (c.startsWith('EUR')) return '🇪🇺';
+    if (c.startsWith('GBP')) return '🇬🇧';
+    if (c.startsWith('JPY')) return '🇯🇵';
+    if (c.startsWith('CHF')) return '🇨🇭';
+    if (c.startsWith('AUD')) return '🇦🇺';
+    if (c.startsWith('CAD')) return '🇨🇦';
+    if (c.startsWith('SAR')) return '🇸🇦';
+    if (c.startsWith('DKK')) return '🇩🇰';
+    if (c.startsWith('SEK')) return '🇸🇪';
+    if (c.startsWith('NOK')) return '🇳🇴';
+    if (c.startsWith('TRY') || c.endsWith('TRY')) return '🇹🇷';
     return '💱';
   }
 
-  /* Dönüştürücüde okunabilir isimler */
+  /* Görsel adlar */
   const DISPLAY_NAMES = {
     USDTRY: "DOLAR",
     EURTRY: "EURO",
@@ -221,9 +233,9 @@
     NOKTRY: "NORVEÇ KRONU",
     JPYTRY: "JAPON YENİ"
   };
-  function nameFor(code){ return DISPLAY_NAMES[code] || code; }
+  const NAME3 = (c)=> DISPLAY_NAMES[c] || c;
 
-  /* Durum UI */
+  /* Bağlantı durumu */
   const connDot = document.getElementById('connDot');
   const connText = document.getElementById('connText');
   const lastUpdated = document.getElementById('lastUpdated');
@@ -233,6 +245,7 @@
     if (tsText) lastUpdated.textContent = 'Son güncelleme: ' + tsText;
   }
 
+  /* Sekmeler */
   const viewFx = document.getElementById('viewFx');
   const viewAu = document.getElementById('viewAu');
   const viewConv = document.getElementById('viewConv');
@@ -263,7 +276,9 @@
       const tsText = any?.tarih || '—';
       setConn(true, tsText);
       renderFx(); renderAu();
-      fillConverter(); computeConv();
+      fillConverter();
+      renderCustConv(); // üst mini liste
+      computeConv();
     }catch(err){
       console.error(err);
       setConn(false);
@@ -304,16 +319,70 @@
     });
   }
 
-  /* Dönüştürücü */
+  /* --- Marj ayarları (varsayılan açık, %0.247) --- */
+  const btnToggleMargin = document.getElementById('btnToggleMargin');
+  const marginBox = document.getElementById('marginBox');
+  const marjState = document.getElementById('marjState');
+  let useMargin = true;
+  function pct(v){ return Math.max(0, Number(v)||0)/100; }
+  function adjusted(side, base, mAlisPct, mSatisPct){
+    if(!useMargin) return base;
+    return side==='alis' ? base*(1 - mAlisPct) : base*(1 + mSatisPct);
+  }
+  btnToggleMargin.onclick = ()=>{
+    const wasHidden = marginBox.classList.contains('hide');
+    marginBox.classList.toggle('hide', !wasHidden ? true : false);
+    btnToggleMargin.title = marginBox.classList.contains('hide') ? 'Marj ayarlarını göster' : 'Marj ayarlarını gizle';
+    // Ayar paneli açılıp kapanınca üst mini listeyi de yenileyelim
+    renderCustConv();
+    computeConv();
+  };
+
+  /* --- ÜST MİNİ LİSTE (Dönüştürücü sekmesi) --- */
+  const listCust = document.getElementById('listCust');
+  const CUST_CODES = ["USDTRY","EURTRY","GBPTRY"];
+  function makeCustRow(label, code, a, s, date){
+    const div = document.createElement('div'); div.className = 'row compact';
+    div.innerHTML = `
+      <div class="left">
+        <div class="code">${flagFor(code)} ${label}</div>
+        <div class="mini">${date||''}</div>
+      </div>
+      <div class="right">
+        <div class="buy">Alış: <b>${fmt3.format(a)}</b></div>
+        <div class="sell">Satış: <b>${fmt3.format(s)}</b></div>
+      </div>`;
+    return div;
+  }
+  function currentMarginPercents(){
+    // panel gizliyse otomatik %0.247; açıksa kutulardan al
+    const auto = 0.00247;
+    const mAlisPct  = marginBox.classList.contains('hide') ? auto : pct(document.getElementById('mAlis').value);
+    const mSatisPct = marginBox.classList.contains('hide') ? auto : pct(document.getElementById('mSatis').value);
+    marjState.textContent = `Marj: ${useMargin?'açık':'kapalı'} • ${(mAlisPct*100).toFixed(3)}% / ${(mSatisPct*100).toFixed(3)}%`;
+    return { mAlisPct, mSatisPct };
+  }
+  function renderCustConv(){
+    listCust.innerHTML = '';
+    if (!RAW || !Object.keys(RAW).length) return;
+    const { mAlisPct, mSatisPct } = currentMarginPercents();
+    CUST_CODES.forEach(code=>{
+      const r = RAW[code]; if (!r) return;
+      const baseAlis = toNum(r.alis);
+      const baseSatis = toNum(r.satis);
+      const a = adjusted('alis', baseAlis, mAlisPct, mSatisPct);   // alış ↓
+      const s = adjusted('satis', baseSatis, mAlisPct, mSatisPct); // satış ↑
+      listCust.appendChild(makeCustRow(NAME3(code), code, a, s, r.tarih));
+    });
+  }
+
+  /* --- Dönüştürücü --- */
   const fxCode = document.getElementById('fxCode');
   const fxDir  = document.getElementById('fxDir');
   const fxSide = document.getElementById('fxSide');
   const fxAmt  = document.getElementById('fxAmt');
   const fxOut  = document.getElementById('fxOut');
   const fxNote = document.getElementById('fxNote');
-  const btnToggleMargin = document.getElementById('btnToggleMargin');
-  const marginBox = document.getElementById('marginBox');
-  const marjState = document.getElementById('marjState');
 
   function fillConverter(){
     fxCode.innerHTML = '';
@@ -321,25 +390,34 @@
       const r = RAW[c];
       const opt = document.createElement('option');
       opt.value = c;
-      opt.textContent = `${flagFor(c)} ${nameFor(c)} • Alış ${fmt3.format(toNum(r.alis))} / Satış ${fmt3.format(toNum(r.satis))}`;
+      opt.textContent = `${flagFor(c)} ${NAME3(c)} • Alış ${fmt3.format(toNum(r.alis))} / Satış ${fmt3.format(toNum(r.satis))}`;
       fxCode.appendChild(opt);
     });
   }
 
-  // Marj: Varsayılan AÇIK (UI gizli). Otomatik değer %0,247.
-  let useMargin = true;
-  function pct(v){ return Math.max(0, Number(v)||0)/100; }
-  function adjusted(side, base, mAlisPct, mSatisPct){
-    if(!useMargin) return base;
-    return side==='alis' ? base*(1 - mAlisPct) : base*(1 + mSatisPct);
-    // alışta düşür, satışta artır
-  }
+  function computeConv(){
+    const code = fxCode.value;
+    const dir  = fxDir.value;
+    const side = fxSide.querySelector('button.active').dataset.side; // 'alis' | 'satis'
+    const amt  = Number(fxAmt.value) || 0;
+    const row  = RAW[code];
+    if(!row){ fxOut.textContent='—'; fxNote.textContent='—'; return; }
 
-  btnToggleMargin.onclick = ()=>{
-    const wasHidden = marginBox.classList.contains('hide');
-    marginBox.classList.toggle('hide', !wasHidden ? true : false);
-    btnToggleMargin.title = marginBox.classList.contains('hide') ? 'Marj ayarlarını göster' : 'Marj ayarlarını gizle';
-  };
+    const { mAlisPct, mSatisPct } = currentMarginPercents();
+
+    const base = toNum(row[side]);
+    const rate = adjusted(side, base, mAlisPct, mSatisPct);
+
+    if (dir==='toTRY'){
+      const val = amt * rate;
+      fxOut.textContent = fmtTRY.format(val);
+      fxNote.textContent = `${flagFor(code)} ${NAME3(code)} (${code}) ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan (marjlı): ${fmt3.format(rate)} • miktar: ${amt}`;
+    }else{
+      const val = amt / rate;
+      fxOut.textContent = `${fmt3.format(val)} ${code.replace('TRY','')}`;
+      fxNote.textContent = `${flagFor(code)} ${NAME3(code)} (${code}) ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan (marjlı): ${fmt3.format(rate)} • miktar: ${amt} ₺`;
+    }
+  }
 
   fxCode.onchange = computeConv;
   fxDir.onchange  = computeConv;
@@ -350,43 +428,15 @@
       e.target.classList.add('active'); computeConv();
     }
   });
-  document.getElementById('mAlis')?.addEventListener('input', computeConv);
-  document.getElementById('mSatis')?.addEventListener('input', computeConv);
-
-  function computeConv(){
-    const code = fxCode.value;
-    const dir  = fxDir.value;
-    const side = fxSide.querySelector('button.active').dataset.side; // 'alis' | 'satis'
-    const amt  = Number(fxAmt.value) || 0;
-    const row  = RAW[code];
-    if(!row){ fxOut.textContent='—'; fxNote.textContent='—'; return; }
-
-    // Otomatik (gizliyse) %0,247; UI açıksa oradan al
-    const auto = 0.00247;
-    const mAlisPct  = marginBox.classList.contains('hide') ? auto : pct(document.getElementById('mAlis').value);
-    const mSatisPct = marginBox.classList.contains('hide') ? auto : pct(document.getElementById('mSatis').value);
-    marjState.textContent = `Marj: ${useMargin?'açık':'kapalı'} • ${(mAlisPct*100).toFixed(3)}% / ${(mSatisPct*100).toFixed(3)}%`;
-
-    const base = toNum(row[side]);
-    const rate = adjusted(side, base, mAlisPct, mSatisPct);
-
-    if (dir==='toTRY'){
-      const val = amt * rate;
-      fxOut.textContent = fmtTRY.format(val);
-      fxNote.textContent = `${flagFor(code)} ${nameFor(code)} (${code}) ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan: ${fmt3.format(rate)} • miktar: ${amt}`;
-    }else{
-      const val = amt / rate;
-      fxOut.textContent = `${fmt3.format(val)} ${code.replace('TRY','')}`;
-      fxNote.textContent = `${flagFor(code)} ${nameFor(code)} (${code}) ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan: ${fmt3.format(rate)} • miktar: ${amt} ₺`;
-    }
-  }
+  document.getElementById('mAlis')?.addEventListener('input', ()=>{ renderCustConv(); computeConv(); });
+  document.getElementById('mSatis')?.addEventListener('input', ()=>{ renderCustConv(); computeConv(); });
 
   function start(){
     show('fx');
-    marginBox.classList.add('hide');           // marj UI gizli
+    marginBox.classList.add('hide');       // marj UI gizli (marj uygulanır)
     btnToggleMargin.title = 'Marj ayarlarını göster';
     load();
-    setInterval(load, 30000);
+    setInterval(load, 30000);              // 30 sn
   }
   start();
 </script>
