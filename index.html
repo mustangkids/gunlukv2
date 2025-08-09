@@ -196,10 +196,10 @@
   }
 
   const DISPLAY_NAMES = {
-    USDTRY:"DOLAR", EURTRY:"EURO", GBPTRY:"STERLİN", CHFTRY:"İSVİÇRE FRANGI",
-    AUDTRY:"AVUSTRALYA DOLARI", CADTRY:"KANADA DOLARI", SARTRY:"SUUDİ ARABİSTAN RİYALİ",
-    DKKTRY:"DANİMARKA KRONU", SEKTRY:"İSVEÇ KRONU", NOKTRY:"NORVEÇ KRONU",
-    JPYTRY:"JAPON YENİ"
+    USDTRY:"DOLAR", EURTRY:"EURO", GBPTRY:"STERLİN",
+    CHFTRY:"İSVİÇRE FRANGI", JPYTRY:"JAPON YENİ", SARTRY:"SUUDİ ARABİSTAN RİYALİ",
+    AUDTRY:"AVUSTRALYA DOLARI", CADTRY:"KANADA DOLARI",
+    DKKTRY:"DANİMARKA KRONU", SEKTRY:"İSVEÇ KRONU", NOKTRY:"NORVEÇ KRONU"
   };
   const NAME = c => DISPLAY_NAMES[c] || c;
 
@@ -229,8 +229,8 @@
     viewConv.classList.toggle('hide', which!=='conv');
   }
 
-  const DOVIZ_CODES = ["USDTRY","EURTRY","GBPTRY","CHFTRY","AUDTRY","CADTRY","SARTRY","DKKTRY","SEKTRY","NOKTRY","JPYTRY","EURUSD","USDJPY","USDCAD","USDCHF","GBPUSD","AUDUSD"];
-  const ALTIN_CODES = ["ALTIN","KULCEALTIN","ONS","AYAR22","AYAR14","CEYREK_YENI","CEYREK_ESKI","YARIM_YENI","YARIM_ESKI","TEK_YENI","TEK_ESKI","ATA_YENI","ATA_ESKI","ATA5_YENI","ATA5_ESKI","GREMESE_YENI","GREMESE_ESKI","GUMUSTRY","GUMUSUSD","XAGUSD","XAUXAG","XPTUSD","XPDUSD","PLATIN","PALADYUM"];
+  const DOVIZ_CODES = ["USDTRY","EURTRY","GBPTRY","CHFTRY","JPYTRY","SARTRY","AUDTRY","CADTRY","DKKTRY","SEKTRY","NOKTRY","EURUSD","USDJPY","USDCAD","USDCHF","GBPUSD","AUDUSD"];
+  const ALTIN_CODES = ["ALTIN","KULCEALTIN","ONS","AYAR22","AYAR14","CEYREK_YENI","CEYREK_ESKI","YARIM_YENI","YARIM_ESKI","TEK_YENI","TEK_ESKI","ATA_YENI","ATA_ESKI","ATA5_YENİ","ATA5_ESKI","GREMESE_YENI","GREMESE_ESKI","GUMUSTRY","GUMUSUSD","XAGUSD","XAUXAG","XPTUSD","XPDUSD","PLATIN","PALADYUM"];
 
   let RAW = {};
 
@@ -243,8 +243,12 @@
       const any = Object.values(RAW)[0];
       const tsText = any?.tarih || '—';
       setConn(true, tsText);
-      renderFx(); renderAu(); fillConverter();
-      renderCustConv(); computeConv();
+
+      renderFx(); renderAu();
+      fillConverter(true);     // seçenekleri tazele ama seçimi koru
+      restoreConvState();      // ilk açılışta/yenilemede seçimi geri yükle
+      renderCustConv();
+      computeConv();
     }catch(e){ console.error(e); setConn(false); }
   }
   document.getElementById('btnRefresh').onclick = ()=> load();
@@ -307,7 +311,8 @@
 
   /* Üst mini liste (Dönüştürücü sekmesi) */
   const listCust = document.getElementById('listCust');
-  const CUST_CODES = ["USDTRY","EURTRY","GBPTRY"];
+  // USD, EUR, GBP + CHF, JPY, SAR
+  const CUST_CODES = ["USDTRY","EURTRY","GBPTRY","CHFTRY","JPYTRY","SARTRY"];
   function makeCustRow(label, code, a, s, date){
     const div = document.createElement('div'); div.className='row compact';
     div.innerHTML = `
@@ -340,19 +345,42 @@
   const fxOut  = document.getElementById('fxOut');
   const fxNote = document.getElementById('fxNote');
 
-  function fillConverter(){
-    fxCode.innerHTML='';
+  // --- seçim koruyan ve localStorage ile çalışan sürüm ---
+  function fillConverter(preserve = true){
+    let prev = preserve ? (fxCode.value || (JSON.parse(localStorage.getItem('conv.state')||'{}').code)) : null;
+
+    fxCode.innerHTML = '';
     DOVIZ_CODES.filter(c=>RAW[c]).forEach(c=>{
-      const opt=document.createElement('option');
-      opt.value=c;
-      opt.textContent=`${flagFor(c)} ${NAME(c)}`; // sadece bayrak + isim
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = `${flagFor(c)} ${NAME(c)}`; // sadece bayrak + isim
       fxCode.appendChild(opt);
     });
+
+    if (prev && [...fxCode.options].some(o => o.value === prev)) {
+      fxCode.value = prev;
+    }
+  }
+  function readSide(){ return fxSide.querySelector('button.active').dataset.side; }
+  function saveConvState(){
+    const state = { code: fxCode.value, dir: fxDir.value, side: readSide(), amt: fxAmt.value };
+    localStorage.setItem('conv.state', JSON.stringify(state));
+  }
+  function restoreConvState(){
+    try{
+      const s = JSON.parse(localStorage.getItem('conv.state')||'{}');
+      if (s.code && [...fxCode.options].some(o=>o.value===s.code)) fxCode.value = s.code;
+      if (s.dir)  fxDir.value = s.dir;
+      if (s.amt)  fxAmt.value = s.amt;
+      if (s.side){
+        fxSide.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.side===s.side));
+      }
+    }catch{}
   }
 
   function computeConv(){
     const code = fxCode.value, dir = fxDir.value;
-    const side = fxSide.querySelector('button.active').dataset.side;
+    const side = readSide();
     const amt  = Number(fxAmt.value)||0; const row = RAW[code];
     if(!row){ fxOut.textContent='—'; fxNote.textContent='—'; return; }
 
@@ -371,13 +399,14 @@
     }
   }
 
-  fxCode.onchange = computeConv;
-  fxDir.onchange  = computeConv;
-  fxAmt.oninput   = computeConv;
+  fxCode.onchange = ()=>{ saveConvState(); computeConv(); };
+  fxDir.onchange  = ()=>{ saveConvState(); computeConv(); };
+  fxAmt.oninput   = ()=>{ saveConvState(); computeConv(); };
   fxSide.addEventListener('click',(e)=>{
     if(e.target.tagName==='BUTTON'){
       fxSide.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-      e.target.classList.add('active'); computeConv();
+      e.target.classList.add('active');
+      saveConvState(); computeConv();
     }
   });
   document.getElementById('mAlisTL')?.addEventListener('input', ()=>{ renderCustConv(); computeConv(); });
