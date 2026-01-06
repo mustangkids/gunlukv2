@@ -26,9 +26,6 @@
   .btn{appearance:none;border:none;background:var(--card);color:var(--fg);padding:9px 12px;border-radius:12px;cursor:pointer;box-shadow:0 0 0 1px var(--border);font-weight:600}
   .btn.refresh{background:linear-gradient(135deg,#f5bf3e,#d09d16);color:#1a1205}
 
-  .tabs{display:flex;gap:8px;overflow:auto;padding:2px 0;margin-bottom:10px}
-  .tab{border:none;background:#171a22;color:var(--fg);padding:10px 14px;border-radius:12px;cursor:pointer;box-shadow:0 0 0 1px var(--border);font-weight:700;white-space:nowrap}
-  .tab.active{background:linear-gradient(135deg,#f5bf3e,#d09d16);color:#1a1205}
 
   .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 14px 36px #0007;padding:12px}
   .list{display:grid;grid-template-columns:1fr;gap:10px}
@@ -50,10 +47,6 @@
   .seg button{flex:1;border:none;background:transparent;color:var(--fg);padding:14px 16px;cursor:pointer;font-weight:800;font-size:16px}
   .seg button.active{background:#20283a}
   .result{font-size:26px;font-weight:900}
-  .hint{color:var(--muted);font-size:13px}
-  .hide{display:none !important}
-  .tog{border:none;background:#171a22;color:var(--fg);padding:8px 12px;border-radius:999px;cursor:pointer;box-shadow:0 0 0 1px var(--border);font-weight:700}
-  .tog.icon{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;font-size:18px}
   .flex{display:flex;gap:10px;flex-wrap:wrap}
   @media (min-width:640px){ .conv{grid-template-columns:repeat(2,1fr)} }
 
@@ -76,26 +69,8 @@
       <button id="btnRefresh" class="btn refresh">Yenile</button>
     </header>
 
-    <div class="tabs">
-      <button id="tabFx" class="tab active">💱 Döviz</button>
-      <button id="tabConv" class="tab">🔁 Dönüştürücü</button>
-    </div>
-
-    <!-- Döviz -->
-    <section id="viewFx" class="card">
-      <div class="meta"><span class="badge">Gösterim: 3 hane</span><span class="badge">Bilgilendirme amaçlı</span></div>
-      <div id="listFx" class="list"></div>
-    </section>
-
     <!-- Dönüştürücü -->
-    <section id="viewConv" class="card hide">
-      <div class="meta">
-        <div class="flex">
-          <span class="badge">İki yön: Döviz→TL / TL→Döviz</span>
-          <span id="marjState" class="badge">Marj: açık • alış -0,100 TL / satış +0,100 TL</span>
-        </div>
-        <button id="btnToggleMargin" class="tog icon" title="Marj ayarları">⚙️</button>
-      </div>
+    <section id="viewConv" class="card">
 
       <!-- Üst mini müşteri listesi (TL marjlı) -->
       <section id="custCard" class="card" style="margin-bottom:10px">
@@ -130,19 +105,9 @@
           <input id="fxAmt" type="number" step="0.01" value="500"/>
         </div>
 
-        <!-- Marj alanları: varsayılan GİZLİ. ⚙️ ile aç/kapa -->
-        <div id="marginBox" class="field hide" style="grid-column:1/-1">
-          <label>Marj (TL, alış ↓ / satış ↑)</label>
-          <div style="display:flex;gap:8px">
-            <input id="mAlisTL"  type="number" step="0.001" value="0.100" title="Alışta TL düş (ör. 0.100)"/>
-            <input id="mSatisTL" type="number" step="0.001" value="0.100" title="Satışta TL artır (ör. 0.100)"/>
-          </div>
-        </div>
-
         <div class="field" style="grid-column:1/-1">
           <label>Sonuç</label>
           <div id="fxOut" class="result">—</div>
-          <div id="fxNote" class="hint">—</div>
         </div>
       </div>
     </section>
@@ -180,17 +145,6 @@
     if (tsText) lastUpdated.textContent = 'Son güncelleme: ' + tsText;
   }
 
-  /* Sekmeler */
-  const viewFx = document.getElementById('viewFx');
-  const viewConv = document.getElementById('viewConv');
-  document.getElementById('tabFx').onclick = ()=>show('fx');
-  document.getElementById('tabConv').onclick = ()=>show('conv');
-  function show(which){
-    document.getElementById('tabFx').classList.toggle('active', which==='fx');
-    document.getElementById('tabConv').classList.toggle('active', which==='conv');
-    viewFx.classList.toggle('hide', which!=='fx');
-    viewConv.classList.toggle('hide', which!=='conv');
-  }
 
   // Yeni API sadece 4 parite destekliyor
   const DOVIZ_CODES = ["USDTRY","EURTRY","GBPTRY","CHFTRY"];
@@ -208,7 +162,6 @@
       const tsText = now.toLocaleString('tr-TR');
       setConn(true, tsText);
 
-      renderFx();
       fillConverter(true);
       restoreConvState();
       renderCustConv();
@@ -217,58 +170,16 @@
   }
   document.getElementById('btnRefresh').onclick = ()=> load();
 
-  /* Liste render */
-  const listFx = document.getElementById('listFx');
 
-  function makeRow(code, buy, sell, decimals){
-    const buyT = (decimals===3?fmt3:fmt2).format(buy);
-    const sellT = (decimals===3?fmt3:fmt2).format(sell);
-    const div = document.createElement('div'); div.className='row';
-    div.innerHTML = `
-      <div class="left">
-        <div class="code">${flagFor(code)} ${NAME(code)}</div>
-        <div class="date">${code}</div>
-      </div>
-      <div class="right">
-        <div class="buy">Alış: <b>${buyT}</b></div>
-        <div class="sell">Satış: <b>${sellT}</b></div>
-      </div>`;
-    return div;
-  }
-  function renderFx(){
-    listFx.innerHTML='';
-    DOVIZ_CODES.forEach(c=>{
-      const r=RAW[c];
-      if(!r) return;
-      listFx.appendChild(makeRow(c, r.buy, r.sell, 3));
-    });
-  }
-
-  /* --- TL Marj --- */
-  const btnToggleMargin = document.getElementById('btnToggleMargin');
-  const marginBox = document.getElementById('marginBox');
-  const marjState = document.getElementById('marjState');
-  let useMargin = true;
+  /* --- TL Marj (sabit) --- */
+  const MARJ_TL = 0.300; // 30 kuruş
 
   function currentMarginTL(){
-    const auto = 0.300; // varsayılan 30 kuruş
-    const mAlisTL  = marginBox.classList.contains('hide') ? auto :
-      Math.max(0, Number(document.getElementById('mAlisTL').value)||0);
-    const mSatisTL = marginBox.classList.contains('hide') ? auto :
-      Math.max(0, Number(document.getElementById('mSatisTL').value)||0);
-    marjState.textContent = `Marj: ${useMargin?'açık':'kapalı'} • alış -${mAlisTL.toFixed(3)} TL / satış +${mSatisTL.toFixed(3)} TL`;
-    return { mAlisTL, mSatisTL };
+    return { mAlisTL: MARJ_TL, mSatisTL: MARJ_TL };
   }
   function adjustedTL(side, base, mAlisTL, mSatisTL){
-    if(!useMargin) return base;
     return side==='buy' ? (base - mAlisTL) : (base + mSatisTL);
   }
-  btnToggleMargin.onclick = ()=>{
-    const wasHidden = marginBox.classList.contains('hide');
-    marginBox.classList.toggle('hide', !wasHidden ? true : false);
-    btnToggleMargin.title = marginBox.classList.contains('hide') ? 'Marj ayarlarını göster' : 'Marj ayarlarını gizle';
-    renderCustConv(); computeConv();
-  };
 
   /* Üst mini liste (Dönüştürücü sekmesi) */
   const listCust = document.getElementById('listCust');
@@ -304,7 +215,6 @@
   const fxSide = document.getElementById('fxSide');
   const fxAmt  = document.getElementById('fxAmt');
   const fxOut  = document.getElementById('fxOut');
-  const fxNote = document.getElementById('fxNote');
 
   function fillConverter(preserve = true){
     let prev = preserve ? (fxCode.value || (JSON.parse(localStorage.getItem('conv.state')||'{}').code)) : null;
@@ -343,7 +253,7 @@
     const side = readSide();
     const amt  = Number(fxAmt.value)||0;
     const row = RAW[code];
-    if(!row){ fxOut.textContent='—'; fxNote.textContent='—'; return; }
+    if(!row){ fxOut.textContent='—'; return; }
 
     const { mAlisTL, mSatisTL } = currentMarginTL();
     const base = row[side];
@@ -352,11 +262,9 @@
     if (dir==='toTRY'){
       const val = amt * rate;
       fxOut.textContent = fmtTRY.format(val);
-      fxNote.textContent = `${flagFor(code)} ${NAME(code)} (${code}) ${side==='buy'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan (marjlı TL): ${fmt3.format(rate)} • miktar: ${amt}`;
     }else{
       const val = amt / rate;
       fxOut.textContent = `${fmt3.format(val)} ${code.replace('TRY','')}`;
-      fxNote.textContent = `${flagFor(code)} ${NAME(code)} (${code}) ${side==='buy'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan (marjlı TL): ${fmt3.format(rate)} • miktar: ${amt} ₺`;
     }
   }
 
@@ -370,15 +278,9 @@
       saveConvState(); computeConv();
     }
   });
-  document.getElementById('mAlisTL')?.addEventListener('input', ()=>{ renderCustConv(); computeConv(); });
-  document.getElementById('mSatisTL')?.addEventListener('input', ()=>{ renderCustConv(); computeConv(); });
-
   function start(){
-    show('fx');
-    marginBox.classList.add('hide');
-    btnToggleMargin.title = 'Marj ayarlarını göster';
     load();
-    setInterval(load, 30000);
+    setInterval(load, 62000);
   }
   start();
 </script>
