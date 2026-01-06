@@ -78,7 +78,6 @@
 
     <div class="tabs">
       <button id="tabFx" class="tab active">💱 Döviz</button>
-      <button id="tabAu" class="tab">🏅 Altın & Gümüş</button>
       <button id="tabConv" class="tab">🔁 Dönüştürücü</button>
     </div>
 
@@ -86,12 +85,6 @@
     <section id="viewFx" class="card">
       <div class="meta"><span class="badge">Gösterim: 3 hane</span><span class="badge">Bilgilendirme amaçlı</span></div>
       <div id="listFx" class="list"></div>
-    </section>
-
-    <!-- Altın -->
-    <section id="viewAu" class="card hide">
-      <div class="meta"><span class="badge">Gösterim: 2 hane</span><span class="badge">Bilgilendirme amaçlı</span></div>
-      <div id="listAu" class="list"></div>
     </section>
 
     <!-- Dönüştürücü -->
@@ -128,8 +121,8 @@
         <div class="field">
           <label>Tür</label>
           <div id="fxSide" class="seg">
-            <button type="button" data-side="alis" class="active">Alış</button>
-            <button type="button" data-side="satis">Satış</button>
+            <button type="button" data-side="buy" class="active">Alış</button>
+            <button type="button" data-side="sell">Satış</button>
           </div>
         </div>
         <div class="field">
@@ -156,50 +149,24 @@
   </div>
 
 <script>
-  const ENDPOINT = "https://lingering-scene-da42.mehmetklc1907.workers.dev/";
+  const ENDPOINT = "https://curly-mud-7bc7.mehmetklc1907.workers.dev/all";
 
   const fmt3  = new Intl.NumberFormat('tr-TR',{minimumFractionDigits:3,maximumFractionDigits:3});
   const fmt2  = new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const fmtTRY= new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY',minimumFractionDigits:2,maximumFractionDigits:2});
-
-  function toNum(v){
-    if (v === null || v === undefined) return NaN;
-    if (typeof v === 'number') return v;
-    let s = String(v).trim();
-    const lastDot = s.lastIndexOf('.'), lastComma = s.lastIndexOf(',');
-    if (lastDot !== -1 && lastComma !== -1){
-      const dec = Math.max(lastDot,lastComma);
-      s = s.replace(/[.,]/g,''); s = s.slice(0,dec)+'.'+s.slice(dec);
-      return Number.parseFloat(s);
-    }
-    if (lastComma !== -1 && lastDot === -1){
-      s = s.replace(/\./g,'').replace(',', '.'); return Number.parseFloat(s);
-    }
-    return Number.parseFloat(s.replace(/[^0-9.-]/g,''));
-  }
 
   function flagFor(code){
     const c = String(code||'').toUpperCase();
     if (c.startsWith('USD')) return '🇺🇸';
     if (c.startsWith('EUR')) return '🇪🇺';
     if (c.startsWith('GBP')) return '🇬🇧';
-    if (c.startsWith('JPY')) return '🇯🇵';
     if (c.startsWith('CHF')) return '🇨🇭';
-    if (c.startsWith('AUD')) return '🇦🇺';
-    if (c.startsWith('CAD')) return '🇨🇦';
-    if (c.startsWith('SAR')) return '🇸🇦';
-    if (c.startsWith('DKK')) return '🇩🇰';
-    if (c.startsWith('SEK')) return '🇸🇪';
-    if (c.startsWith('NOK')) return '🇳🇴';
     if (c.startsWith('TRY') || c.endsWith('TRY')) return '🇹🇷';
     return '💱';
   }
 
   const DISPLAY_NAMES = {
-    USDTRY:"DOLAR", EURTRY:"EURO", GBPTRY:"STERLİN",
-    CHFTRY:"İSVİÇRE FRANGI", JPYTRY:"JAPON YENİ", SARTRY:"SUUDİ ARABİSTAN RİYALİ",
-    AUDTRY:"AVUSTRALYA DOLARI", CADTRY:"KANADA DOLARI",
-    DKKTRY:"DANİMARKA KRONU", SEKTRY:"İSVEÇ KRONU", NOKTRY:"NORVEÇ KRONU"
+    USDTRY:"DOLAR", EURTRY:"EURO", GBPTRY:"STERLİN", CHFTRY:"İSVİÇRE FRANGI"
   };
   const NAME = c => DISPLAY_NAMES[c] || c;
 
@@ -215,22 +182,18 @@
 
   /* Sekmeler */
   const viewFx = document.getElementById('viewFx');
-  const viewAu = document.getElementById('viewAu');
   const viewConv = document.getElementById('viewConv');
   document.getElementById('tabFx').onclick = ()=>show('fx');
-  document.getElementById('tabAu').onclick = ()=>show('au');
   document.getElementById('tabConv').onclick = ()=>show('conv');
   function show(which){
     document.getElementById('tabFx').classList.toggle('active', which==='fx');
-    document.getElementById('tabAu').classList.toggle('active', which==='au');
     document.getElementById('tabConv').classList.toggle('active', which==='conv');
     viewFx.classList.toggle('hide', which!=='fx');
-    viewAu.classList.toggle('hide', which!=='au');
     viewConv.classList.toggle('hide', which!=='conv');
   }
 
-  const DOVIZ_CODES = ["USDTRY","EURTRY","GBPTRY","CHFTRY","JPYTRY","SARTRY","AUDTRY","CADTRY","DKKTRY","SEKTRY","NOKTRY","EURUSD","USDJPY","USDCAD","USDCHF","GBPUSD","AUDUSD"];
-  const ALTIN_CODES = ["ALTIN","KULCEALTIN","ONS","AYAR22","AYAR14","CEYREK_YENI","CEYREK_ESKI","YARIM_YENI","YARIM_ESKI","TEK_YENI","TEK_ESKI","ATA_YENI","ATA_ESKI","ATA5_YENİ","ATA5_ESKI","GREMESE_YENI","GREMESE_ESKI","GUMUSTRY","GUMUSUSD","XAGUSD","XAUXAG","XPTUSD","XPDUSD","PLATIN","PALADYUM"];
+  // Yeni API sadece 4 parite destekliyor
+  const DOVIZ_CODES = ["USDTRY","EURTRY","GBPTRY","CHFTRY"];
 
   let RAW = {};
 
@@ -238,15 +201,16 @@
     try{
       const res = await fetch(ENDPOINT, {cache:'no-store'});
       if(!res.ok) throw new Error('HTTP '+res.status);
-      const root = await res.json();
-      RAW = root?.data || {};
-      const any = Object.values(RAW)[0];
-      const tsText = any?.tarih || '—';
+      RAW = await res.json();
+
+      // Zaman damgası yok, şu anki zamanı göster
+      const now = new Date();
+      const tsText = now.toLocaleString('tr-TR');
       setConn(true, tsText);
 
-      renderFx(); renderAu();
-      fillConverter(true);     // seçenekleri tazele ama seçimi koru
-      restoreConvState();      // ilk açılışta/yenilemede seçimi geri yükle
+      renderFx();
+      fillConverter(true);
+      restoreConvState();
       renderCustConv();
       computeConv();
     }catch(e){ console.error(e); setConn(false); }
@@ -255,31 +219,28 @@
 
   /* Liste render */
   const listFx = document.getElementById('listFx');
-  const listAu = document.getElementById('listAu');
 
-  function makeRow(code, a, s, date, decimals){
-    const aT = (decimals===3?fmt3:fmt2).format(a);
-    const sT = (decimals===3?fmt3:fmt2).format(s);
+  function makeRow(code, buy, sell, decimals){
+    const buyT = (decimals===3?fmt3:fmt2).format(buy);
+    const sellT = (decimals===3?fmt3:fmt2).format(sell);
     const div = document.createElement('div'); div.className='row';
     div.innerHTML = `
       <div class="left">
-        <div class="code">${flagFor(code)} ${code}</div>
-        <div class="date">${date||''}</div>
+        <div class="code">${flagFor(code)} ${NAME(code)}</div>
+        <div class="date">${code}</div>
       </div>
       <div class="right">
-        <div class="buy">Alış: <b>${aT}</b></div>
-        <div class="sell">Satış: <b>${sT}</b></div>
+        <div class="buy">Alış: <b>${buyT}</b></div>
+        <div class="sell">Satış: <b>${sellT}</b></div>
       </div>`;
     return div;
   }
-  function renderFx(){ listFx.innerHTML='';
-    DOVIZ_CODES.forEach(c=>{ const r=RAW[c]; if(!r) return;
-      listFx.appendChild(makeRow(c,toNum(r.alis),toNum(r.satis),r.tarih,3));
-    });
-  }
-  function renderAu(){ listAu.innerHTML='';
-    ALTIN_CODES.forEach(c=>{ const r=RAW[c]; if(!r) return;
-      listAu.appendChild(makeRow(c,toNum(r.alis),toNum(r.satis),r.tarih,2));
+  function renderFx(){
+    listFx.innerHTML='';
+    DOVIZ_CODES.forEach(c=>{
+      const r=RAW[c];
+      if(!r) return;
+      listFx.appendChild(makeRow(c, r.buy, r.sell, 3));
     });
   }
 
@@ -290,7 +251,7 @@
   let useMargin = true;
 
   function currentMarginTL(){
-    const auto = 0.100; // varsayılan 10 kuruş
+    const auto = 0.300; // varsayılan 30 kuruş
     const mAlisTL  = marginBox.classList.contains('hide') ? auto :
       Math.max(0, Number(document.getElementById('mAlisTL').value)||0);
     const mSatisTL = marginBox.classList.contains('hide') ? auto :
@@ -300,7 +261,7 @@
   }
   function adjustedTL(side, base, mAlisTL, mSatisTL){
     if(!useMargin) return base;
-    return side==='alis' ? (base - mAlisTL) : (base + mSatisTL);
+    return side==='buy' ? (base - mAlisTL) : (base + mSatisTL);
   }
   btnToggleMargin.onclick = ()=>{
     const wasHidden = marginBox.classList.contains('hide');
@@ -311,18 +272,18 @@
 
   /* Üst mini liste (Dönüştürücü sekmesi) */
   const listCust = document.getElementById('listCust');
-  // USD, EUR, GBP + CHF, JPY, SAR
-  const CUST_CODES = ["USDTRY","EURTRY","GBPTRY","CHFTRY","JPYTRY","SARTRY"];
-  function makeCustRow(label, code, a, s, date){
+  const CUST_CODES = ["USDTRY","EURTRY","GBPTRY","CHFTRY"];
+
+  function makeCustRow(label, code, buy, sell){
     const div = document.createElement('div'); div.className='row compact';
     div.innerHTML = `
       <div class="left">
         <div class="code">${flagFor(code)} ${label}</div>
-        <div class="mini">${date||''}</div>
+        <div class="mini">${code}</div>
       </div>
       <div class="right">
-        <div class="buy">Alış: <b>${fmt3.format(a)}</b></div>
-        <div class="sell">Satış: <b>${fmt3.format(s)}</b></div>
+        <div class="buy">Alış: <b>${fmt3.format(buy)}</b></div>
+        <div class="sell">Satış: <b>${fmt3.format(sell)}</b></div>
       </div>`;
     return div;
   }
@@ -331,9 +292,9 @@
     const { mAlisTL, mSatisTL } = currentMarginTL();
     CUST_CODES.forEach(code=>{
       const r = RAW[code]; if(!r) return;
-      const a = adjustedTL('alis',  toNum(r.alis),  mAlisTL, mSatisTL);
-      const s = adjustedTL('satis', toNum(r.satis), mAlisTL, mSatisTL);
-      listCust.appendChild(makeCustRow(NAME(code), code, a, s, r.tarih));
+      const buy = adjustedTL('buy',  r.buy,  mAlisTL, mSatisTL);
+      const sell = adjustedTL('sell', r.sell, mAlisTL, mSatisTL);
+      listCust.appendChild(makeCustRow(NAME(code), code, buy, sell));
     });
   }
 
@@ -345,7 +306,6 @@
   const fxOut  = document.getElementById('fxOut');
   const fxNote = document.getElementById('fxNote');
 
-  // --- seçim koruyan ve localStorage ile çalışan sürüm ---
   function fillConverter(preserve = true){
     let prev = preserve ? (fxCode.value || (JSON.parse(localStorage.getItem('conv.state')||'{}').code)) : null;
 
@@ -353,7 +313,7 @@
     DOVIZ_CODES.filter(c=>RAW[c]).forEach(c=>{
       const opt = document.createElement('option');
       opt.value = c;
-      opt.textContent = `${flagFor(c)} ${NAME(c)}`; // sadece bayrak + isim
+      opt.textContent = `${flagFor(c)} ${NAME(c)}`;
       fxCode.appendChild(opt);
     });
 
@@ -381,21 +341,22 @@
   function computeConv(){
     const code = fxCode.value, dir = fxDir.value;
     const side = readSide();
-    const amt  = Number(fxAmt.value)||0; const row = RAW[code];
+    const amt  = Number(fxAmt.value)||0;
+    const row = RAW[code];
     if(!row){ fxOut.textContent='—'; fxNote.textContent='—'; return; }
 
     const { mAlisTL, mSatisTL } = currentMarginTL();
-    const base = toNum(row[side]);
+    const base = row[side];
     const rate = adjustedTL(side, base, mAlisTL, mSatisTL);
 
     if (dir==='toTRY'){
       const val = amt * rate;
       fxOut.textContent = fmtTRY.format(val);
-      fxNote.textContent = `${flagFor(code)} ${NAME(code)} (${code}) ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan (marjlı TL): ${fmt3.format(rate)} • miktar: ${amt}`;
+      fxNote.textContent = `${flagFor(code)} ${NAME(code)} (${code}) ${side==='buy'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan (marjlı TL): ${fmt3.format(rate)} • miktar: ${amt}`;
     }else{
       const val = amt / rate;
       fxOut.textContent = `${fmt3.format(val)} ${code.replace('TRY','')}`;
-      fxNote.textContent = `${flagFor(code)} ${NAME(code)} (${code}) ${side==='alis'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan (marjlı TL): ${fmt3.format(rate)} • miktar: ${amt} ₺`;
+      fxNote.textContent = `${flagFor(code)} ${NAME(code)} (${code}) ${side==='buy'?'alış':'satış'}: ${fmt3.format(base)} → kullanılan (marjlı TL): ${fmt3.format(rate)} • miktar: ${amt} ₺`;
     }
   }
 
@@ -413,11 +374,11 @@
   document.getElementById('mSatisTL')?.addEventListener('input', ()=>{ renderCustConv(); computeConv(); });
 
   function start(){
-    show('fx');                          // açılışta Döviz
-    marginBox.classList.add('hide');     // marj UI gizli (marj uygulanır)
+    show('fx');
+    marginBox.classList.add('hide');
     btnToggleMargin.title = 'Marj ayarlarını göster';
     load();
-    setInterval(load, 30000);            // 30 sn
+    setInterval(load, 30000);
   }
   start();
 </script>
