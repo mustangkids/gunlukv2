@@ -114,7 +114,7 @@
   </div>
 
 <script>
-  const ENDPOINT = "https://curly-mud-7bc7.mehmetklc1907.workers.dev/all";
+  const WORKER_URL = 'https://cool-water-3f99.mehmetklc1907.workers.dev';
 
   const fmt3  = new Intl.NumberFormat('tr-TR',{minimumFractionDigits:3,maximumFractionDigits:3});
   const fmt2  = new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -126,12 +126,27 @@
     if (c.startsWith('EUR')) return '🇪🇺';
     if (c.startsWith('GBP')) return '🇬🇧';
     if (c.startsWith('CHF')) return '🇨🇭';
+    if (c.startsWith('JPY')) return '🇯🇵';
+    if (c.startsWith('CAD')) return '🇨🇦';
+    if (c.startsWith('AUD')) return '🇦🇺';
+    if (c.startsWith('RUB')) return '🇷🇺';
+    if (c.startsWith('SAR')) return '🇸🇦';
+    if (c.startsWith('AED')) return '🇦🇪';
+    if (c.startsWith('DKK')) return '🇩🇰';
+    if (c.startsWith('SEK')) return '🇸🇪';
+    if (c.startsWith('NOK')) return '🇳🇴';
+    if (c.startsWith('KWD')) return '🇰🇼';
+    if (c.startsWith('CNY')) return '🇨🇳';
     if (c.startsWith('TRY') || c.endsWith('TRY')) return '🇹🇷';
     return '💱';
   }
 
   const DISPLAY_NAMES = {
-    USDTRY:"DOLAR", EURTRY:"EURO", GBPTRY:"STERLİN", CHFTRY:"İSVİÇRE FRANGI"
+    USDTRY:"DOLAR", EURTRY:"EURO", GBPTRY:"STERLİN", CHFTRY:"İSVİÇRE FRANGI",
+    JPYTRY:"JAPON YENİ", CADTRY:"KANADA DOLARI", AUDTRY:"AVUSTRALYA DOLARI",
+    RUBTRY:"RUS RUBLESİ", SARTRY:"SUUDİ ARABİSTAN RİYALİ", AEDTRY:"BAE DİRHEMİ",
+    DKKTRY:"DANİMARKA KRONU", SEKTRY:"İSVEÇ KRONU", NOKTRY:"NORVEÇ KRONU",
+    KWDTRY:"KUVEYT DİNARI", CNYTRY:"ÇİN YUANI"
   };
   const NAME = c => DISPLAY_NAMES[c] || c;
 
@@ -146,18 +161,44 @@
   }
 
 
-  // Yeni API sadece 4 parite destekliyor
-  const DOVIZ_CODES = ["USDTRY","EURTRY","GBPTRY","CHFTRY"];
+  const DOVIZ_CODES = ["USDTRY","EURTRY","GBPTRY","CHFTRY","JPYTRY","CADTRY","AUDTRY","RUBTRY","SARTRY","AEDTRY","DKKTRY","SEKTRY","NOKTRY","KWDTRY","CNYTRY"];
 
   let RAW = {};
 
   async function load(){
     try{
-      const res = await fetch(ENDPOINT, {cache:'no-store'});
-      if(!res.ok) throw new Error('HTTP '+res.status);
-      RAW = await res.json();
+      const currencies = ['USD', 'EUR', 'GBP', 'CHF', 'JPY', 'CAD', 'AUD', 'RUB', 'SAR', 'AED', 'DKK', 'SEK', 'NOK', 'KWD', 'CNY'];
+      const forexData = {};
 
-      // Zaman damgası yok, şu anki zamanı göster
+      // Tüm para birimlerini paralel çek
+      const promises = currencies.map(currency =>
+        fetch(`${WORKER_URL}/banks?currency=${currency}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.banks) {
+              // Harem'i bul
+              const haremBank = data.banks.find(bank =>
+                bank.bank_name && bank.bank_name.toLowerCase().includes('harem')
+              );
+              if (haremBank) {
+                forexData[currency + 'TRY'] = {
+                  buy: haremBank.buy,
+                  sell: haremBank.sell
+                };
+              }
+            }
+          })
+          .catch(err => console.error(`${currency} fetch error:`, err))
+      );
+
+      await Promise.all(promises);
+
+      if (Object.keys(forexData).length === 0) {
+        throw new Error('Harem kurları bulunamadı');
+      }
+
+      RAW = forexData;
+
       const now = new Date();
       const tsText = now.toLocaleString('tr-TR');
       setConn(true, tsText);
@@ -183,7 +224,7 @@
 
   /* Üst mini liste (Dönüştürücü sekmesi) */
   const listCust = document.getElementById('listCust');
-  const CUST_CODES = ["USDTRY","EURTRY","GBPTRY","CHFTRY"];
+  const CUST_CODES = ["USDTRY","EURTRY","GBPTRY","CHFTRY","JPYTRY","CADTRY","AUDTRY","RUBTRY","SARTRY","AEDTRY","DKKTRY","SEKTRY","NOKTRY","KWDTRY","CNYTRY"];
 
   function makeCustRow(label, code, buy, sell){
     const div = document.createElement('div'); div.className='row compact';
@@ -280,7 +321,7 @@
   });
   function start(){
     load();
-    setInterval(load, 62000);
+    setInterval(load, 30000); // 30 saniye
   }
   start();
 </script>
