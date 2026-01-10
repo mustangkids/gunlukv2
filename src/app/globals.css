@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --tr-bg: #0d1117;
+  --tr-card: #161b22;
+  --tr-border: #30363d;
+  --tr-text: #c9d1d9;
+  --tr-muted: #8b949e;
+  --tr-green: #3fb950;
+  --tr-red: #f85149;
+  --tr-blue: #58a6ff;
+  --tr-orange: #d29922;
+  --tr-purple: #a371f7;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background-color: var(--tr-bg);
+  color: var(--tr-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--tr-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--tr-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--tr-muted);
+}
+
+/* Chart container styles */
+.chart-container {
+  @apply bg-tr-card border border-tr-border rounded-lg p-4;
+}
+
+/* Card styles */
+.dashboard-card {
+  @apply bg-tr-card border border-tr-border rounded-lg p-4 hover:border-tr-muted transition-colors;
+}
+
+/* Recharts overrides */
+.recharts-cartesian-axis-tick-value {
+  fill: var(--tr-muted);
+  font-size: 11px;
+}
+
+.recharts-legend-item-text {
+  color: var(--tr-text) !important;
+  font-size: 12px;
+}
+
+.recharts-tooltip-wrapper {
+  outline: none;
+}
+
+/* Heatmap cell */
+.heatmap-cell {
+  @apply transition-opacity hover:opacity-80;
+}
+
+/* Gradient backgrounds for charts */
+.gradient-green {
+  background: linear-gradient(180deg, rgba(63, 185, 80, 0.2) 0%, rgba(63, 185, 80, 0) 100%);
+}
+
+.gradient-red {
+  background: linear-gradient(180deg, rgba(248, 81, 73, 0.2) 0%, rgba(248, 81, 73, 0) 100%);
+}
+
+/* Loading skeleton */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--tr-card) 25%,
+    var(--tr-border) 50%,
+    var(--tr-card) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
